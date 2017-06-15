@@ -77,6 +77,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -337,7 +338,10 @@ public class MantaConnectionFactory implements Closeable {
         final PoolingHttpClientConnectionManager poolingConnectionManager =
                 new PoolingHttpClientConnectionManager(socketFactoryRegistry,
                         connFactory,
-                        DNS_RESOLVER);
+                        null,
+                        DNS_RESOLVER,
+                        1L,
+                        TimeUnit.SECONDS);
         poolingConnectionManager.setDefaultMaxPerRoute(maxConns);
         poolingConnectionManager.setMaxTotal(maxConns);
         poolingConnectionManager.setDefaultSocketConfig(buildSocketConfig());
