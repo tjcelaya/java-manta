@@ -31,7 +31,8 @@ import java.util.Base64;
 
 /**
  * Unit tests that verify we can serialize and deserialize a {@link Cipher}
- * object using the Kryo framework.
+ * object using the Kryo framework. Additional tests also verify the deserialized
+ * Cipher objects have independent state from the original instance.
  *
  * @author <a href="https://github.com/dekobon">Elijah Zupancic</a>
  * @since 3.0.0
@@ -155,7 +156,7 @@ public class CipherSerializerTest {
     }
 
     private void canSerializeCipher(final SupportedCipherDetails cipherDetails,
-                                    final boolean verifyStateSeparation)
+                                    final boolean verifyDeserializedStateSeparation)
             throws Exception {
         byte[] iv = new byte[cipherDetails.getIVLengthInBytes()];
         Arrays.fill(iv, (byte) 0);
@@ -180,7 +181,7 @@ public class CipherSerializerTest {
 
         Cipher cipher;
 
-        if (verifyStateSeparation) {
+        if (verifyDeserializedStateSeparation) {
             cipher = cipherDetails.getCloneableCipher();
         } else {
             cipher = cipherDetails.getCipher();
@@ -199,7 +200,7 @@ public class CipherSerializerTest {
         }
 
         byte[] branchedChunk = new byte[0];
-        if (verifyStateSeparation) {
+        if (verifyDeserializedStateSeparation) {
             branchedChunk = cipher.doFinal(plainTextChunks[1]);
         }
 
@@ -214,10 +215,10 @@ public class CipherSerializerTest {
                 "Deserialized cipher couldn't compute equivalent value",
                 expected, actual);
 
-        if (verifyStateSeparation) {
+        if (verifyDeserializedStateSeparation) {
             byte[] branchedActual = combineArray(chunk1, branchedChunk);
             AssertJUnit.assertArrayEquals(
-                    "Original cipher state affected by deserialized instance",
+                    "Original cipher state affected deserialized instance state",
                     expected, branchedActual);
         }
     }
