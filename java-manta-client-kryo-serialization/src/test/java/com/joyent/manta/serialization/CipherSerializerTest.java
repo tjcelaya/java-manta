@@ -14,9 +14,11 @@ import com.esotericsoftware.kryo.io.Output;
 import com.joyent.manta.client.crypto.AesCbcCipherDetails;
 import com.joyent.manta.client.crypto.AesCtrCipherDetails;
 import com.joyent.manta.client.crypto.AesGcmCipherDetails;
+import com.joyent.manta.client.crypto.ExternalSecurityProviderLoader;
 import com.joyent.manta.client.crypto.SecretKeyUtils;
 import com.joyent.manta.client.crypto.SupportedCipherDetails;
 import org.testng.AssertJUnit;
+import org.testng.SkipException;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
@@ -46,49 +48,114 @@ public class CipherSerializerTest {
         kryo.register(Cipher.class, new CipherSerializer(kryo));
     }
 
+    private void ensurePkcs11Enabled() {
+        if (null == ExternalSecurityProviderLoader.getPkcs11Provider()) {
+            throw new SkipException("PKCS11 Security Provider not present, " +
+                    "skipping Cipher cloning verification.");
+        }
+    }
+
     public void canSerializeAesGcm128() throws Exception {
-        canSerializeCipher(AesGcmCipherDetails.INSTANCE_128_BIT);
+        canSerializeCipher(AesGcmCipherDetails.INSTANCE_128_BIT, false);
     }
 
     @Test(groups = {"unlimited-crypto"})
     public void canSerializeAesGcm192() throws Exception {
-        canSerializeCipher(AesGcmCipherDetails.INSTANCE_192_BIT);
+        canSerializeCipher(AesGcmCipherDetails.INSTANCE_192_BIT, false);
     }
 
     @Test(groups = {"unlimited-crypto"})
     public void canSerializeAesGcm256() throws Exception {
-        canSerializeCipher(AesGcmCipherDetails.INSTANCE_256_BIT);
+        canSerializeCipher(AesGcmCipherDetails.INSTANCE_256_BIT, false);
     }
 
     public void canSerializeAesCtr128() throws Exception {
-        canSerializeCipher(AesCtrCipherDetails.INSTANCE_128_BIT);
+        canSerializeCipher(AesCtrCipherDetails.INSTANCE_128_BIT, false);
     }
 
     @Test(groups = {"unlimited-crypto"})
     public void canSerializeAesCtr192() throws Exception {
-        canSerializeCipher(AesCtrCipherDetails.INSTANCE_192_BIT);
+        canSerializeCipher(AesCtrCipherDetails.INSTANCE_192_BIT, false);
     }
 
     @Test(groups = {"unlimited-crypto"})
     public void canSerializeAesCtr256() throws Exception {
-        canSerializeCipher(AesCtrCipherDetails.INSTANCE_256_BIT);
+        canSerializeCipher(AesCtrCipherDetails.INSTANCE_256_BIT, false);
     }
 
     public void canSerializeAesCbc128() throws Exception {
-        canSerializeCipher(AesCbcCipherDetails.INSTANCE_128_BIT);
+        canSerializeCipher(AesCbcCipherDetails.INSTANCE_128_BIT, false);
     }
 
     @Test(groups = {"unlimited-crypto"})
     public void canSerializeAesCbc192() throws Exception {
-        canSerializeCipher(AesCbcCipherDetails.INSTANCE_192_BIT);
+        canSerializeCipher(AesCbcCipherDetails.INSTANCE_192_BIT, false);
     }
 
     @Test(groups = {"unlimited-crypto"})
     public void canSerializeAesCbc256() throws Exception {
-        canSerializeCipher(AesCbcCipherDetails.INSTANCE_256_BIT);
+        canSerializeCipher(AesCbcCipherDetails.INSTANCE_256_BIT, false);
     }
 
-    private void canSerializeCipher(final SupportedCipherDetails cipherDetails)
+    /*
+     *  Tests for verifying deserialized ciphers actually have independent state.
+     */
+    @Test(groups = {"pkcs11"})
+    public void canSerializeWithDetachedCloneGcm128() throws Exception {
+        ensurePkcs11Enabled();
+        canSerializeCipher(AesGcmCipherDetails.INSTANCE_128_BIT, true);
+    }
+
+    @Test(groups = {"pkcs11", "unlimited-crypto"})
+    public void canSerializeWithDetachedCloneGcm192() throws Exception {
+        ensurePkcs11Enabled();
+        canSerializeCipher(AesGcmCipherDetails.INSTANCE_192_BIT, true);
+    }
+
+    @Test(groups = {"pkcs11", "unlimited-crypto"})
+    public void canSerializeWithDetachedCloneGcm256() throws Exception {
+        ensurePkcs11Enabled();
+        canSerializeCipher(AesGcmCipherDetails.INSTANCE_256_BIT, true);
+    }
+
+    @Test(groups = {"pkcs11"})
+    public void canSerializeWithDetachedCloneCtr128() throws Exception {
+        ensurePkcs11Enabled();
+        canSerializeCipher(AesCtrCipherDetails.INSTANCE_128_BIT, true);
+    }
+
+    @Test(groups = {"pkcs11", "unlimited-crypto"})
+    public void canSerializeWithDetachedCloneCtr192() throws Exception {
+        ensurePkcs11Enabled();
+        canSerializeCipher(AesCtrCipherDetails.INSTANCE_192_BIT, true);
+    }
+
+    @Test(groups = {"pkcs11", "unlimited-crypto"})
+    public void canSerializeWithDetachedCloneCtr256() throws Exception {
+        ensurePkcs11Enabled();
+        canSerializeCipher(AesCtrCipherDetails.INSTANCE_256_BIT, true);
+    }
+
+    @Test(groups = {"pkcs11"})
+    public void canSerializeWithDetachedCloneCbc128() throws Exception {
+        ensurePkcs11Enabled();
+        canSerializeCipher(AesCbcCipherDetails.INSTANCE_128_BIT, true);
+    }
+
+    @Test(groups = {"pkcs11", "unlimited-crypto"})
+    public void canSerializeWithDetachedCloneCbc192() throws Exception {
+        ensurePkcs11Enabled();
+        canSerializeCipher(AesCbcCipherDetails.INSTANCE_192_BIT, true);
+    }
+
+    @Test(groups = {"pkcs11", "unlimited-crypto"})
+    public void canSerializeWithDetachedCloneCbc256() throws Exception {
+        ensurePkcs11Enabled();
+        canSerializeCipher(AesCbcCipherDetails.INSTANCE_256_BIT, true);
+    }
+
+    private void canSerializeCipher(final SupportedCipherDetails cipherDetails,
+                                    final boolean verifyStateSeparation)
             throws Exception {
         byte[] iv = new byte[cipherDetails.getIVLengthInBytes()];
         Arrays.fill(iv, (byte) 0);
@@ -111,7 +178,14 @@ public class CipherSerializerTest {
             expected = combineArray(chunk1, chunk2);
         }
 
-        Cipher cipher = cipherDetails.getCipher();
+        Cipher cipher;
+
+        if (verifyStateSeparation) {
+            cipher = cipherDetails.getCloneableCipher();
+        } else {
+            cipher = cipherDetails.getCipher();
+        }
+
         cipher.init(Cipher.ENCRYPT_MODE, secretKey,
                 cipherDetails.getEncryptionParameterSpec(iv));
         byte[] chunk1 = cipher.update(plainTextChunks[0]);
@@ -124,6 +198,11 @@ public class CipherSerializerTest {
             serializedContent = out.toByteArray();
         }
 
+        byte[] branchedChunk = new byte[0];
+        if (verifyStateSeparation) {
+            branchedChunk = cipher.doFinal(plainTextChunks[1]);
+        }
+
         try (Input input = new FastInput(serializedContent)) {
             Cipher deserialized = kryo.readObject(input, Cipher.class);
             chunk2 = deserialized.doFinal(plainTextChunks[1]);
@@ -134,6 +213,13 @@ public class CipherSerializerTest {
         AssertJUnit.assertArrayEquals(
                 "Deserialized cipher couldn't compute equivalent value",
                 expected, actual);
+
+        if (verifyStateSeparation) {
+            byte[] branchedActual = combineArray(chunk1, branchedChunk);
+            AssertJUnit.assertArrayEquals(
+                    "Original cipher state affected by deserialized instance",
+                    expected, branchedActual);
+        }
     }
 
     private SecretKey loadSecretKey(final SupportedCipherDetails cipherDetails) {
