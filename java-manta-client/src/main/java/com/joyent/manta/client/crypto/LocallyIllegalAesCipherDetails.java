@@ -98,12 +98,6 @@ public class LocallyIllegalAesCipherDetails implements SupportedCipherDetails {
     }
 
     @Override
-    public Cipher getCloneableCipher() {
-        fail();
-        return null;
-    }
-
-    @Override
     public long ciphertextSize(final long plaintextSize) {
         fail();
         return 0L;
