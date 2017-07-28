@@ -54,16 +54,17 @@ public class KeyPairFactory {
         final String password = config.getPassword();
 
         try {
+            final char[] charPassword;
+            if (password != null) {
+                charPassword = password.toCharArray();
+            } else {
+                charPassword = null;
+            }
+
             if (privateKeyContent != null) {
-                final char[] charPassword;
-                if (password != null) {
-                    charPassword = password.toCharArray();
-                } else {
-                    charPassword = null;
-                }
                 keyPair = KeyPairLoader.getKeyPair(privateKeyContent, charPassword);
             } else if (keyPath != null) {
-                keyPair = KeyPairLoader.getKeyPair(new File(keyPath).toPath());
+                keyPair = KeyPairLoader.getKeyPair(new File(keyPath).toPath(), charPassword);
             } else {
                 String msg = "Private key content setting must be set if "
                     + "key file path is not set";
