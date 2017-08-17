@@ -214,6 +214,8 @@
 
     <build>
         <plugins>
+
+            <!-- Shading and relocation-->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-shade-plugin</artifactId>
@@ -280,6 +282,8 @@
                     </execution>
                 </executions>
             </plugin>
+
+            <!-- Unit testing -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
@@ -291,6 +295,33 @@
                     </suiteXmlFiles>
                 </configuration>
             </plugin>
+
+            <!-- Integration testing -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-failsafe-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>integration-tests</id>
+                        <goals>
+                            <goal>integration-test</goal>
+                            <goal>verify</goal>
+                        </goals>
+                        <configuration>
+                            <skip>${maven.integration.test.skip}</skip>
+                            <suiteXmlFiles>
+                                <suiteXmlFile>src/integration/resources/testng-integration.xml</suiteXmlFile>
+                            </suiteXmlFiles>
+                            <!-- uncomment to enable proxies with integration tests -->
+                            <!--<systemPropertyVariables>-->
+                            <!--<https.proxyHost>localhost</https.proxyHost>-->
+                            <!--<https.proxyPort>8888</https.proxyPort>-->
+                            <!--</systemPropertyVariables>-->
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
             <!-- Library that creates a properties file containing version info -->
             <plugin>
                 <groupId>com.google.code.maven-replacer-plugin</groupId>
@@ -346,6 +377,41 @@
                                     <value>DATE = Instant.now();</value>
                                 </replacement>
                             </replacements>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <!-- Integration test source -->
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>build-helper-maven-plugin</artifactId>
+                <version>3.0.0</version>
+                <executions>
+                    <execution>
+                        <id>add-it-source</id>
+                        <phase>generate-test-sources</phase>
+                        <goals>
+                            <goal>add-test-source</goal>
+                        </goals>
+                        <configuration>
+                            <sources>
+                                <source>src/it/java</source>
+                            </sources>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>add-it-resource</id>
+                        <phase>generate-resources</phase>
+                        <goals>
+                            <goal>add-resource</goal>
+                        </goals>
+                        <configuration>
+                            <resources>
+                                <resource>
+                                    <directory>src/it/resources</directory>
+                                </resource>
+                            </resources>
                         </configuration>
                     </execution>
                 </executions>

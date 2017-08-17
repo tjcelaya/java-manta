@@ -1,5 +1,5 @@
 <!DOCTYPE suite SYSTEM "http://testng.org/testng-1.0.dtd">
-<suite name="Java Manta SDK Integration Test Suite" verbose="1">
+<suite name="Java Manta SDK External Integration Test Suite" verbose="1">
     <test name="Manta Client Integration Tests [Unencrypted]">
         <groups>
             <run>
