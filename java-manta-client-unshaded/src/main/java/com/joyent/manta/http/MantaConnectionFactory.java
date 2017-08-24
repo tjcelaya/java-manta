@@ -145,13 +145,28 @@ public class MantaConnectionFactory implements Closeable {
 
     /**
      * Create new instance using the passed configuration.
-     * @param config configuration of the connection parameters
+     *
+     * @param config  configuration of the connection parameters
      * @param keyPair cryptographic signing key pair used for HTTP signatures
-     * @param signer Signer configured to work with the the given keyPair
+     * @param signer  Signer configured to work with the the given keyPair
      */
     public MantaConnectionFactory(final ConfigContext config,
                                   final KeyPair keyPair,
                                   final ThreadLocalSigner signer) {
+        this(config, keyPair, signer, null);
+    }
+
+    /**
+     * Create new instance using the passed configuration.
+     *
+     * @param config  configuration of the connection parameters
+     * @param keyPair cryptographic signing key pair used for HTTP signatures
+     * @param signer  Signer configured to work with the the given keyPair
+     */
+    public MantaConnectionFactory(final ConfigContext config,
+                                  final KeyPair keyPair,
+                                  final ThreadLocalSigner signer,
+                                  final HttpClientBuilder clientBuilder) {
         Validate.notNull(config, "Configuration context must not be null");
 
         CONNECTION_FACTORY_COUNT.incrementAndGet();
@@ -181,7 +196,7 @@ public class MantaConnectionFactory implements Closeable {
 
         this.connectionManager = buildConnectionManager();
 
-        this.httpClientBuilder = createBuilder(authScheme);
+        this.httpClientBuilder = createBuilder(authScheme, clientBuilder);
         this.jmxDynamicBeans = buildMBeans();
 
         registerMBeans();
@@ -348,10 +363,14 @@ public class MantaConnectionFactory implements Closeable {
      * Manta.
      *
      * @param authScheme authentication scheme to use (null if noAuth is enabled)
+     * @param suppliedBuilder a preconfigured HttpClientBuilder we can further customize
      * @return configured instance
      */
-    protected HttpClientBuilder createBuilder(final HttpSignatureAuthScheme authScheme) {
-        final boolean noAuth = ObjectUtils.firstNonNull(config.noAuth(), false);
+    protected HttpClientBuilder createBuilder(final HttpSignatureAuthScheme authScheme,
+                                              final HttpClientBuilder suppliedBuilder) {
+        final boolean noAuth = ObjectUtils.firstNonNull(
+                config.noAuth(),
+                DefaultsConfigContext.DEFAULT_NO_AUTH);
 
         final int maxConns = ObjectUtils.firstNonNull(
                 config.getMaximumConnections(),
@@ -376,8 +395,15 @@ public class MantaConnectionFactory implements Closeable {
                 .setContentCompressionEnabled(true)
                 .build();
 
-        final HttpClientBuilder builder = HttpClients.custom()
-                .disableAuthCaching()
+        final HttpClientBuilder builder;
+
+        if (suppliedBuilder != null) {
+            builder = suppliedBuilder;
+        } else {
+            builder = HttpClients.custom();
+        }
+
+        builder.disableAuthCaching()
                 .disableCookieManagement()
                 .setConnectionReuseStrategy(new DefaultConnectionReuseStrategy())
                 .setMaxConnTotal(maxConns)
