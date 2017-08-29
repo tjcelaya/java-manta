@@ -17,7 +17,6 @@ import com.joyent.manta.util.IndexedInterceptingCloseableHttpClient;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.RandomUtils;
-import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.reflect.FieldUtils;
 import org.apache.http.HttpStatus;
 import org.apache.http.HttpVersion;
@@ -106,20 +105,6 @@ public class EncryptedServersideMultipartManagerIT {
         client.deleteRecursive(testPathPrefix);
     }
 
-    public void canRetrySmallestPossiblePartsWithBadResponseCode(final SupportedCipherDetails cipherDetails,
-                                                                 final int responseCode,
-                                                                 final int failedPartIndex,
-                                                                 final int... partSizes) {
-        Validate.inclusiveBetween(-1, partSizes.length, failedPartIndex);
-        int totalObjectSize = Arrays.stream(partSizes).reduce(0, Integer::sum);
-
-        final String path = testPathPrefix + UUID.randomUUID().toString();
-
-        final byte[] content = RandomUtils.nextBytes(FIVE_MB + RandomUtils.nextInt(500, 1500));
-        //
-
-    }
-
     public void canRetryPartWithBadResponseCodeOnFirstPart() throws Exception {
         final String path = testPathPrefix + UUID.randomUUID().toString();
 
@@ -178,7 +163,6 @@ public class EncryptedServersideMultipartManagerIT {
 
         final EncryptedMultipartUpload<ServerSideMultipartUpload> upload = manager.initiateUpload(path);
 
-
         parts.add(manager.uploadPart(upload, 1, content1));
 
         Assert.assertThrows(MantaMultipartException.class, () -> {
@@ -208,7 +192,8 @@ public class EncryptedServersideMultipartManagerIT {
         }
     }
 
-    private IndexedInterceptingCloseableHttpClient wrapHttpClientWithInterceptor(EncryptedServerSideMultipartManager manager)
+    private IndexedInterceptingCloseableHttpClient wrapHttpClientWithInterceptor(
+            final EncryptedServerSideMultipartManager manager)
             throws IllegalAccessException {
         final ServerSideMultipartManager wrappedManager =
                 (ServerSideMultipartManager) FieldUtils.readField(FIELD_ENCRYPTEDMULTIPARTMANAGER_WRAPPED, manager, true);
