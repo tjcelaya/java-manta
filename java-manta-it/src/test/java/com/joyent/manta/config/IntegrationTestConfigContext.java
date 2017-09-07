@@ -7,11 +7,27 @@
  */
 package com.joyent.manta.config;
 
-import com.joyent.manta.client.crypto.*;
+import com.joyent.http.signature.KeyFingerprinter;
+import com.joyent.manta.client.crypto.SecretKeyUtils;
+import com.joyent.manta.client.crypto.SupportedCipherDetails;
+import com.joyent.manta.client.crypto.SupportedCiphersLookupMap;
+import com.joyent.manta.server.MantaServer;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.BooleanUtils;
+import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.bouncycastle.openssl.jcajce.JcaPEMWriter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import javax.crypto.SecretKey;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
+import java.security.NoSuchAlgorithmException;
 import java.util.Base64;
+import javax.crypto.SecretKey;
 
 /**
  * {@link ConfigContext} implementation that loads
@@ -21,12 +37,16 @@ import java.util.Base64;
  * @author <a href="https://github.com/dekobon">Elijah Zupancic</a>
  */
 public class IntegrationTestConfigContext extends SystemSettingsConfigContext {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(IntegrationTestConfigContext.class);
+
     /**
      * Populate configuration from defaults, environment variables, system
      * properties and an addition context passed in.
      */
     public IntegrationTestConfigContext() {
         super(enableTestEncryption(new StandardConfigContext(), encryptionEnabled(), encryptionCipher()));
+        prepareMockMantaIfRequested();
     }
 
     /**
@@ -38,6 +58,7 @@ public class IntegrationTestConfigContext extends SystemSettingsConfigContext {
         super(enableTestEncryption(new StandardConfigContext(),
                 (encryptionEnabled() && usingEncryption == null) ||
                         BooleanUtils.isTrue(usingEncryption), encryptionCipher()));
+        prepareMockMantaIfRequested();
     }
 
     /**
@@ -49,6 +70,7 @@ public class IntegrationTestConfigContext extends SystemSettingsConfigContext {
         super(enableTestEncryption(new StandardConfigContext(),
                 (encryptionEnabled() && usingEncryption == null) ||
                         BooleanUtils.isTrue(usingEncryption), encryptionCipher));
+        prepareMockMantaIfRequested();
     }
 
     private static <T> SettableConfigContext<T> enableTestEncryption(
@@ -87,4 +109,50 @@ public class IntegrationTestConfigContext extends SystemSettingsConfigContext {
 
         return sysProp != null ? sysProp : envVar;
     }
+
+    public void prepareMockMantaIfRequested() {
+        String shouldMockManta = System.getProperty("manta.mock");
+        if (shouldMockManta == null
+                || shouldMockManta.equalsIgnoreCase("false")
+                || shouldMockManta.equalsIgnoreCase("0")) {
+            return;
+        }
+
+        LOGGER.info("Generating keypair and using embedded Manta");
+
+        final ImmutablePair<File, String> key;
+        try {
+            key = generatePrivateKey();
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+
+        this.setMantaURL("http://localhost:" + MantaServer.getServer().getAddress().getPort());
+        this.setMantaUser("mock");
+        this.setMantaKeyPath(key.left.getAbsolutePath());
+        this.setMantaKeyId(key.right);
+    }
+
+    private ImmutablePair<File, String> generatePrivateKey() throws IOException {
+        final KeyPair keyPair;
+        try {
+            keyPair = KeyPairGenerator.getInstance("RSA").generateKeyPair();
+        } catch (NoSuchAlgorithmException e) {
+            // RSA should always be available
+            throw new IOException(e);
+        }
+
+        final File keyFile = File.createTempFile("private-key", "");
+        FileUtils.forceDeleteOnExit(keyFile);
+
+        try (final FileWriter fileWriter = new FileWriter(keyFile);
+             final JcaPEMWriter writer = new JcaPEMWriter(fileWriter)) {
+
+            writer.writeObject(keyPair.getPrivate());
+            writer.flush();
+        }
+
+        return new ImmutablePair<>(keyFile, KeyFingerprinter.md5Fingerprint(keyPair));
+    }
+
 }
