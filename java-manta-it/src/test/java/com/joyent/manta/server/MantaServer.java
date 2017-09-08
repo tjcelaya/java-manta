@@ -11,6 +11,7 @@ import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -19,7 +20,6 @@ import java.net.HttpURLConnection;
 import java.net.InetSocketAddress;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 
 import static java.lang.System.err;
@@ -63,6 +63,19 @@ public class MantaServer {
                     + exchange.getRequestMethod() + " "
                     + exchange.getRequestURI().getRawPath());
 
+            final String[] requestPath = exchange.getRequestURI().getPath().substring(1).split("/");
+
+            if (requestPath.length < 2) {
+                exchange.sendResponseHeaders(HttpURLConnection.HTTP_NOT_FOUND, 0);
+                exchange.close();
+                return;
+            }
+
+            final Path topLevelDir = storage.resolve(requestPath[0] + File.separator + requestPath[1]);
+            if (!Files.exists(topLevelDir)) {
+                Files.createDirectories(topLevelDir);
+            }
+
             switch (exchange.getRequestMethod()) {
                 case "GET":
                     get(exchange);
@@ -94,21 +107,17 @@ public class MantaServer {
 
             if (exchange.getRequestHeaders().getFirst(HttpHeaders.CONTENT_TYPE).equals(CONTENT_TYPE_DIRECTORY)) {
                 Files.createDirectories(requestPath);
-                return;
-            }
-
-            try (InputStream requestBody = exchange.getRequestBody();
-                 OutputStream fileOutput = Files.newOutputStream(requestPath, StandardOpenOption.CREATE, StandardOpenOption.WRITE)) {
-                IOUtils.copy(requestBody, fileOutput);
+            } else {
+                try (InputStream requestBody = exchange.getRequestBody();
+                     OutputStream fileOutput = Files.newOutputStream(requestPath, StandardOpenOption.CREATE, StandardOpenOption.WRITE)) {
+                    IOUtils.copy(requestBody, fileOutput);
+                }
             }
 
             final Headers responseHeaders = exchange.getResponseHeaders();
             responseHeaders.add(HttpHeaders.LOCATION, requestPath.toString());
 
-            exchange.sendResponseHeaders(HttpStatus.SC_NO_CONTENT, 1);
-            final OutputStream responseBody = exchange.getResponseBody();
-            responseBody.write(0);
-            responseBody.close();
+            exchange.sendResponseHeaders(HttpStatus.SC_NO_CONTENT, 0);
         }
     }
 }
