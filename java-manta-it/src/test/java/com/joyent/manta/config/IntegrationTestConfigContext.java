@@ -27,6 +27,7 @@ import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
 import java.util.Base64;
+import java.util.concurrent.atomic.AtomicReference;
 import javax.crypto.SecretKey;
 
 /**
@@ -110,8 +111,10 @@ public class IntegrationTestConfigContext extends SystemSettingsConfigContext {
         return sysProp != null ? sysProp : envVar;
     }
 
+    private static AtomicReference<MantaServer> server = new AtomicReference<>();
+
     public void prepareMockMantaIfRequested() {
-        String shouldMockManta = System.getProperty("manta.mock");
+        final String shouldMockManta = System.getProperty("manta.mock");
         if (shouldMockManta == null
                 || shouldMockManta.equalsIgnoreCase("false")
                 || shouldMockManta.equalsIgnoreCase("0")) {
@@ -127,10 +130,20 @@ public class IntegrationTestConfigContext extends SystemSettingsConfigContext {
             throw new UncheckedIOException(e);
         }
 
-        this.setMantaURL("http://localhost:" + MantaServer.getServer().getAddress().getPort());
+        if (server.get() == null) {
+            try {
+                server.compareAndSet(null, new MantaServer());
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+        this.setMantaURL("http://localhost:" + server.get().getPort());
         this.setMantaUser("mock");
         this.setMantaKeyPath(key.left.getAbsolutePath());
         this.setMantaKeyId(key.right);
+
+        this.setRetries(0);
     }
 
     private ImmutablePair<File, String> generatePrivateKey() throws IOException {
