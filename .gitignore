@@ -99,3 +99,7 @@ release.properties
 dependency-reduced-pom.xml
 
 **/test-output
+
+jmeter.log
+
+.DS_Store

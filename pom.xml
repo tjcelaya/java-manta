@@ -78,6 +78,7 @@
         <module>java-manta-it</module>
         <module>java-manta-benchmark</module>
         <module>java-manta-examples</module>
+        <module>java-manta-jmeter-plugin</module>
     </modules>
 
     <scm>
