@@ -15,8 +15,6 @@ import org.apache.commons.io.IOUtils;
 import org.apache.jmeter.config.Arguments;
 import org.apache.jmeter.protocol.java.sampler.JavaSamplerContext;
 import org.apache.jmeter.samplers.SampleResult;
-import org.apache.jmeter.threads.JMeterContext;
-import org.apache.jmeter.threads.JMeterContextService;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -31,25 +29,23 @@ import java.util.stream.Stream;
  * @author DouglasAnderson
  */
 public class UploadMultipartFile extends MantaTester {
-    String dir;
-    String fileName;
-    int splitSize;
-    byte[] data;
-    boolean multipart;
-    boolean verify;
-    boolean encrypted;
-    boolean upload;
-    int timeout;
-    int retries;
-    int maxConnections;
-    String localfile;
-    String encAlgo = "";
-    // private static transient Logger logger =
-    // LoggingManager.getLoggerForClass();
+
+    private String dir;
+    private String fileName;
+    private int splitSize;
+    private byte[] data;
+    private boolean multipart;
+    private boolean verify;
+    private boolean encrypted;
+    private int timeout;
+    private int retries;
+    private int maxConnections;
+    private String localfile;
+    private String encAlgo = "";
 
     @Override
     public void setupTest(JavaSamplerContext context) {
-        System.out.println("Setup being called");
+        getNewLogger().debug("Setup being called");
     }
 
     /**
@@ -58,7 +54,7 @@ public class UploadMultipartFile extends MantaTester {
      */
     @Override
     public Arguments getDefaultParameters() {
-        System.out.println("Parameters beign called");
+        getNewLogger().debug("Parameters beign called");
         Arguments params = super.getDefaultParameters();
         params.addArgument("multipart", "true");
         params.addArgument("splitSize", "5000");
@@ -110,7 +106,7 @@ public class UploadMultipartFile extends MantaTester {
         ChainedConfigContext config = new ChainedConfigContext(new DefaultsConfigContext(), new EnvVarConfigContext(),
                 new SystemSettingsConfigContext());
         if (encrypted) {
-            System.out.println("Setting encrypted settings to true");
+            getNewLogger().debug("Setting encrypted settings to true");
             config.setClientEncryptionEnabled(true).setEncryptionAlgorithm(encAlgo).setPermitUnencryptedDownloads(false)
                     .setEncryptionKeyId("simple/example").setEncryptionPrivateKeyBytes(
                             Base64.getDecoder().decode("RkZGRkZGRkJEOTY3ODNDNkM5MUUyMjIyMTExMTIyMjI="));
@@ -119,10 +115,10 @@ public class UploadMultipartFile extends MantaTester {
         config.setVerifyUploads(verify);
         config.setMaximumConnections(maxConnections);
         config.setRetries(retries);
-        System.out.println("Multipart ? : " + multipart + " multiple files  : " + localfile.contains(","));
+        getNewLogger().debug("Multipart ? : " + multipart + " multiple files  : " + localfile.contains(","));
         try (MantaClient client = new MantaClient(config)) {
             result.sampleStart();
-            System.out.println("Multipart ? : " + multipart + " multiple files  : " + localfile.contains(","));
+            getNewLogger().debug("Multipart ? : " + multipart + " multiple files  : " + localfile.contains(","));
             if (multipart) {
                 if (localfile.contains(",")) {
                     if (encrypted) {
@@ -138,7 +134,7 @@ public class UploadMultipartFile extends MantaTester {
                     return result;
                 }
                 if (encrypted) {
-                    System.out.println("**************** Encrypted : Yes ****************");
+                    getNewLogger().debug("**************** Encrypted : Yes ****************");
                     EncryptedServerSideMultipartManager multipart = new EncryptedServerSideMultipartManager(client);
                     encryptedMultipartUpload(multipart, uploadObject, localfile, splitSize);
                     result.sampleEnd();
@@ -174,9 +170,9 @@ public class UploadMultipartFile extends MantaTester {
         return result;
     }
 
-    private static void encryptedMultipartUpload(final EncryptedServerSideMultipartManager multipart, final String uploadObject,
+    private void encryptedMultipartUpload(final EncryptedServerSideMultipartManager multipart, final String uploadObject,
             String uploadFile, int split) throws IOException {
-        System.out.println("*********    Using the encrypted manager *********");
+        getNewLogger().debug("*********    Using the encrypted manager *********");
         File spittingFile = new File(uploadFile);
         FileInputStream fstream = new FileInputStream(spittingFile);
         byte[] fileBytes = IOUtils.toByteArray(fstream);
@@ -186,15 +182,15 @@ public class UploadMultipartFile extends MantaTester {
         if (fileBytes.length % split > 0) {
             numUploads++;
         }
-        System.out.println("Splitting object : " + uploadFile + " for split upload");
-        System.out.println("Creating " + numUploads + " for multipart" + size + " : " + split + " : " + (size / split)
+        getNewLogger().debug("Splitting object : " + uploadFile + " for split upload");
+        getNewLogger().debug("Creating " + numUploads + " for multipart" + size + " : " + split + " : " + (size / split)
                 + " with remainder " + (size % split));
         EncryptedMultipartUpload<ServerSideMultipartUpload> upload = multipart.initiateUpload(uploadObject);
         MantaMultipartUploadTuple[] parts = new MantaMultipartUploadTuple[numUploads];
         int curByte = 0;
-        System.out.println("Starting the process of creating the parts");
+        getNewLogger().debug("Starting the process of creating the parts");
         for (int i = 0; i < numUploads - 1; i++) {
-            System.out.println("Current Byte : " + curByte + " of " + split);
+            getNewLogger().debug("Current Byte : " + curByte + " of " + split);
             parts[i] = multipart.uploadPart(upload, (i + 1), Arrays.copyOfRange(fileBytes, curByte, curByte + split));
             curByte = curByte + split + 1;
         }
@@ -202,7 +198,7 @@ public class UploadMultipartFile extends MantaTester {
                 Arrays.copyOfRange(fileBytes, curByte, size - 1));
         Stream<MantaMultipartUploadTuple> partsStream = Arrays.stream(parts);
         multipart.complete(upload, partsStream);
-        System.out.println(uploadObject + " is now assembled!");
+        getNewLogger().debug(uploadObject + " is now assembled!");
     }
 
     private void multipartUpload(final ServerSideMultipartManager multipart, final String uploadObject, final String uploadFile,
@@ -212,34 +208,34 @@ public class UploadMultipartFile extends MantaTester {
         long size = splittingFile.length();
         int splits = Math.floorDiv((int) size, this.splitSize);
         int remainder = ((int) size) % splitSize;
-        System.out.println("Splitting file, size :  " + size + " into :" + splits + " file parts, the last part is : "
+        getNewLogger().debug("Splitting file, size :  " + size + " into :" + splits + " file parts, the last part is : "
                 + remainder);
         MantaMultipartUploadTuple[] parts;
         if (remainder == 0) {
-            System.out.println(" No remainder here");
+            getNewLogger().debug(" No remainder here");
             parts = new MantaMultipartUploadTuple[splits];
         } else {
             parts = new MantaMultipartUploadTuple[splits + 1];
         }
         ServerSideMultipartUpload upload = multipart.initiateUpload(uploadObject);
-        System.out.println("HERE 2");
+        getNewLogger().debug("HERE 2");
         for (int i = 0; i < splits; i++) {
-            System.out.println("Adding part : " + i);
+            getNewLogger().debug("Adding part : " + i);
             parts[i] = multipart.uploadPart(upload, (i + 1), IOUtils.toByteArray(fstream, splitSize));
-            System.out.println("grabbed the next " + splitSize + " bytes");
+            getNewLogger().debug("grabbed the next " + splitSize + " bytes");
         }
 
         // All this does is take care of the remainder.
         if (remainder > 0) {
-            System.out.println("Adding the last part");
+            getNewLogger().debug("Adding the last part");
             parts[splits] = multipart.uploadPart(upload, (splits + 1), IOUtils.toByteArray(fstream, remainder));
-            System.out.println("grabbed the next " + remainder + " bytes");
+            getNewLogger().debug("grabbed the next " + remainder + " bytes");
         }
 
-        System.out.println("Adding the array for the stream having " + parts.length + " parts");
+        getNewLogger().debug("Adding the array for the stream having " + parts.length + " parts");
         Stream<MantaMultipartUploadTuple> partsStream = Arrays.stream(parts);
         multipart.complete(upload, partsStream);
-        System.out.println(uploadObject + " is now assembled!");
+        getNewLogger().debug(uploadObject + " is now assembled!");
     }
 
     /**
@@ -252,7 +248,7 @@ public class UploadMultipartFile extends MantaTester {
      * @param uploadFile
      * @throws Exception
      */
-    private static void multipleFileMPUEncrypted(final EncryptedServerSideMultipartManager multipart, final String uploadObject,
+    private void multipleFileMPUEncrypted(final EncryptedServerSideMultipartManager multipart, final String uploadObject,
             final String uploadFile) throws Exception {
         String[] uploadFiles = uploadFile.split(",");
         EncryptedMultipartUpload<ServerSideMultipartUpload> upload = multipart.initiateUpload(uploadObject);
@@ -261,11 +257,11 @@ public class UploadMultipartFile extends MantaTester {
             FileInputStream curStream = new FileInputStream(new File(uploadFiles[i]));
             byte[] arr = IOUtils.toByteArray(curStream);
             parts[i] = multipart.uploadPart(upload, (i + 1), arr);
-            System.out.println("Part uploaded " + i + " of " + uploadFiles.length);
+            getNewLogger().debug("Part uploaded " + i + " of " + uploadFiles.length);
         }
         Stream<MantaMultipartUploadTuple> partsStream = Arrays.stream(parts);
         multipart.complete(upload, partsStream);
-        System.out.println(uploadObject + " is now assembled!");
+        getNewLogger().debug(uploadObject + " is now assembled!");
     }
 
     /**
@@ -278,7 +274,7 @@ public class UploadMultipartFile extends MantaTester {
      * @param uploadFile
      * @throws Exception
      */
-    private static void multipleFileMPU(final ServerSideMultipartManager multipart, final String uploadObject, final String uploadFile)
+    private void multipleFileMPU(final ServerSideMultipartManager multipart, final String uploadObject, final String uploadFile)
             throws Exception {
         String[] uploadFiles = uploadFile.split(",");
         ServerSideMultipartUpload upload = multipart.initiateUpload(uploadObject);
@@ -287,11 +283,11 @@ public class UploadMultipartFile extends MantaTester {
             FileInputStream curStream = new FileInputStream(new File(uploadFiles[i]));
             byte[] arr = IOUtils.toByteArray(curStream);
             parts[i] = multipart.uploadPart(upload, (i + 1), arr);
-            System.out.println("Part uploaded " + i + " of " + uploadFiles.length);
+            getNewLogger().debug("Part uploaded " + i + " of " + uploadFiles.length);
         }
         Stream<MantaMultipartUploadTuple> partsStream = Arrays.stream(parts);
         multipart.complete(upload, partsStream);
-        System.out.println(uploadObject + " is now assembled!");
+        getNewLogger().debug(uploadObject + " is now assembled!");
     }
 
     @Override
@@ -301,9 +297,4 @@ public class UploadMultipartFile extends MantaTester {
                 + ", encrypted=" + encrypted + ", timeout=" + timeout + ", retries=" + retries + ", maxConnections="
                 + maxConnections + "]";
     }
-
-    public JMeterContext getThreadContext() {
-        return JMeterContextService.getContext();
-    }
-
 }

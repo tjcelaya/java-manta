@@ -86,8 +86,4 @@ public class DirectoryListing extends MantaTester {
     public String toString() {
         return "DirectoryListing [baseDir=" + baseDir + ", filter=" + filter + ", basedir=" + basedir + "]";
     }
-
-    public JMeterContext getThreadContext() {
-        return JMeterContextService.getContext();
-    }
 }

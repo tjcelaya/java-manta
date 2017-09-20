@@ -1,15 +1,13 @@
 package com.joyent.manta.jmeter;
 
-import java.io.BufferedWriter;
-import java.io.FileWriter;
-import java.util.Random;
-
 import org.apache.jmeter.config.Arguments;
 import org.apache.jmeter.protocol.java.sampler.AbstractJavaSamplerClient;
 import org.apache.jmeter.protocol.java.sampler.JavaSamplerContext;
 import org.apache.jmeter.samplers.SampleResult;
-import org.apache.jmeter.threads.JMeterContext;
-import org.apache.jmeter.threads.JMeterContextService;
+
+import java.io.BufferedWriter;
+import java.io.FileWriter;
+import java.util.Random;
 
 /**
  * This will create a random file of garbage but specific size. With the option
@@ -18,8 +16,8 @@ import org.apache.jmeter.threads.JMeterContextService;
  * @author DouglasAnderson z
  */
 public class GeneratedFile extends AbstractJavaSamplerClient {
-    int size;
-    String filename;
+    private int size;
+    private String filename;
 
     @Override
     public void setupTest(JavaSamplerContext context) {
@@ -61,9 +59,4 @@ public class GeneratedFile extends AbstractJavaSamplerClient {
         result.setSamplerData("Successfully wrote a file of size " + size + " to file : " + filename);
         return result;
     }
-
-    public JMeterContext getThreadContext() {
-        return JMeterContextService.getContext();
-    }
-
 }

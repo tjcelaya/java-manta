@@ -9,8 +9,6 @@ import com.joyent.manta.config.SystemSettingsConfigContext;
 import org.apache.jmeter.config.Arguments;
 import org.apache.jmeter.protocol.java.sampler.JavaSamplerContext;
 import org.apache.jmeter.samplers.SampleResult;
-import org.apache.jmeter.threads.JMeterContext;
-import org.apache.jmeter.threads.JMeterContextService;
 
 /**
  * This class will create a directory in manta in JMeter. It will just read from
@@ -68,9 +66,4 @@ public class SimpleCreateDirectory extends MantaTester {
     public String toString() {
         return "SimpleCreateDirectory [directory=" + directory + "]";
     }
-
-    public JMeterContext getThreadContext() {
-        return JMeterContextService.getContext();
-    }
-
 }

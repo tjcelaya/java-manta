@@ -11,8 +11,6 @@ import com.joyent.manta.config.SystemSettingsConfigContext;
 import org.apache.jmeter.config.Arguments;
 import org.apache.jmeter.protocol.java.sampler.JavaSamplerContext;
 import org.apache.jmeter.samplers.SampleResult;
-import org.apache.jmeter.threads.JMeterContext;
-import org.apache.jmeter.threads.JMeterContextService;
 
 import java.io.File;
 import java.io.IOException;
@@ -24,10 +22,7 @@ import java.util.Base64;
  * @author DouglasAnderson
  */
 public class CreateEncryptedObject extends MantaTester {
-    boolean isBase;
-    StringBuffer dir;
-    String localfile;
-    byte[] data;
+    private StringBuffer dir;
 
     @Override
     public void setupTest(final JavaSamplerContext context) {
@@ -84,11 +79,6 @@ public class CreateEncryptedObject extends MantaTester {
 
         result.setSamplerData(config.toString() + "\n" + this.toString());
         return result;
-    }
-
-
-    public JMeterContext getThreadContext() {
-        return JMeterContextService.getContext();
     }
 
 }

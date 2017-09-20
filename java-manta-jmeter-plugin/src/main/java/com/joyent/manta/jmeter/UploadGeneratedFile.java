@@ -13,8 +13,6 @@ import com.joyent.manta.config.SystemSettingsConfigContext;
 import org.apache.jmeter.config.Arguments;
 import org.apache.jmeter.protocol.java.sampler.JavaSamplerContext;
 import org.apache.jmeter.samplers.SampleResult;
-import org.apache.jmeter.threads.JMeterContext;
-import org.apache.jmeter.threads.JMeterContextService;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -43,7 +41,7 @@ public class UploadGeneratedFile extends MantaTester {
     private String objectName;
 
     @Override
-    public void setupTest(JavaSamplerContext context) {
+    public void setupTest(final JavaSamplerContext context) {
         System.out.println("Setup being called");
     }
 
@@ -65,7 +63,7 @@ public class UploadGeneratedFile extends MantaTester {
     }
 
     @Override
-    public SampleResult runTest(JavaSamplerContext context) {
+    public SampleResult runTest(final JavaSamplerContext context) {
         // setting vars from input table.
         try {
             dir = context.getParameter("directory");
@@ -138,34 +136,35 @@ public class UploadGeneratedFile extends MantaTester {
      *            - The multipart manager.
      * @throws IOException
      */
-    private void uploadMultipartGenerated(int size, int numParts, String name, ServerSideMultipartManager multipart)
+    private void uploadMultipartGenerated(final int size,
+                                          final int numParts,
+                                          final String name,
+                                          final ServerSideMultipartManager multipart)
             throws IOException {
-        MantaMultipartUploadTuple[] parts = new MantaMultipartUploadTuple[numParts];
-        ServerSideMultipartUpload upload = multipart.initiateUpload(name);
+        final MantaMultipartUploadTuple[] parts = new MantaMultipartUploadTuple[numParts];
+        final ServerSideMultipartUpload upload = multipart.initiateUpload(name);
         for (int i = 0; i < parts.length; i++) {
             byte[] b = new byte[size];
             new Random().nextBytes(b);
             parts[i] = multipart.uploadPart(upload, (i + 1), b);
         }
-        Stream<MantaMultipartUploadTuple> partsStream = Arrays.stream(parts);
+        final Stream<MantaMultipartUploadTuple> partsStream = Arrays.stream(parts);
         multipart.complete(upload, partsStream);
     }
 
-    private static void uploadMultipartGeneratedEncrrypted(int size, int numParts, String name,
-            EncryptedServerSideMultipartManager multipart) throws IOException {
-        EncryptedMultipartUpload<ServerSideMultipartUpload> upload = multipart.initiateUpload(name);
-        MantaMultipartUploadTuple[] parts = new MantaMultipartUploadTuple[numParts];
+    private static void uploadMultipartGeneratedEncrrypted(final int size,
+                                                           final int numParts,
+                                                           final String name,
+                                                           final EncryptedServerSideMultipartManager multipart)
+            throws IOException {
+        final EncryptedMultipartUpload<ServerSideMultipartUpload> upload = multipart.initiateUpload(name);
+        final MantaMultipartUploadTuple[] parts = new MantaMultipartUploadTuple[numParts];
         for (int i = 0; i < numParts; i++) {
             byte[] b = new byte[size];
             new Random().nextBytes(b);
             parts[i] = multipart.uploadPart(upload, (i + 1), b);
         }
-        Stream<MantaMultipartUploadTuple> partsStream = Arrays.stream(parts);
+        final Stream<MantaMultipartUploadTuple> partsStream = Arrays.stream(parts);
         multipart.complete(upload, partsStream);
     }
-
-    public JMeterContext getThreadContext() {
-        return JMeterContextService.getContext();
-    }
-
 }
