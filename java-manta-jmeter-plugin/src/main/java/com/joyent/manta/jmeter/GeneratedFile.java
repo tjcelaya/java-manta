@@ -4,6 +4,8 @@ import org.apache.jmeter.config.Arguments;
 import org.apache.jmeter.protocol.java.sampler.AbstractJavaSamplerClient;
 import org.apache.jmeter.protocol.java.sampler.JavaSamplerContext;
 import org.apache.jmeter.samplers.SampleResult;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.BufferedWriter;
 import java.io.FileWriter;
@@ -16,6 +18,9 @@ import java.util.Random;
  * @author DouglasAnderson z
  */
 public class GeneratedFile extends AbstractJavaSamplerClient {
+
+    private static final Logger LOG = LoggerFactory.getLogger(GeneratedFile.class);
+
     private int size;
     private String filename;
 
@@ -45,7 +50,7 @@ public class GeneratedFile extends AbstractJavaSamplerClient {
             return result;
         }
         SampleResult result = new SampleResult();
-        System.out.println("File name " + filename);
+        LOG.debug("File name " + filename);
         try (BufferedWriter bw = new BufferedWriter(new FileWriter(filename))) {
             byte[] b = new byte[size];
             new Random().nextBytes(b);

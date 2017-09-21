@@ -18,6 +18,8 @@ import org.apache.jmeter.protocol.java.sampler.JavaSamplerContext;
 import org.apache.jmeter.samplers.SampleResult;
 import org.apache.jmeter.threads.JMeterContext;
 import org.apache.jmeter.threads.JMeterContextService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 
@@ -28,6 +30,9 @@ import java.io.IOException;
  * @author DouglasAnderson
  */
 public class DeleteObject extends MantaTester {
+
+    private static final Logger LOG = LoggerFactory.getLogger(DeleteObject.class);
+
     private String fileName = "";
 
     @Override
@@ -44,7 +49,7 @@ public class DeleteObject extends MantaTester {
 
     @Override
     public SampleResult runTest(final JavaSamplerContext context) {
-        System.out.println("Run Is called");
+        LOG.debug("Run Is called");
         fileName = context.getParameter("fileName");
 
         ConfigContext config = new ChainedConfigContext(new DefaultsConfigContext(), new EnvVarConfigContext(),

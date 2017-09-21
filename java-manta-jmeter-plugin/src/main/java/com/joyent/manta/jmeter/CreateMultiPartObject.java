@@ -22,8 +22,8 @@ import org.apache.commons.lang3.RandomUtils;
 import org.apache.jmeter.config.Arguments;
 import org.apache.jmeter.protocol.java.sampler.JavaSamplerContext;
 import org.apache.jmeter.samplers.SampleResult;
-import org.apache.jmeter.threads.JMeterContext;
-import org.apache.jmeter.threads.JMeterContextService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -37,6 +37,8 @@ import java.util.stream.Stream;
  * @author DouglasAnderson
  */
 public class CreateMultiPartObject extends MantaTester {
+    private static final Logger LOG = LoggerFactory.getLogger(CreateMultiPartObject.class);
+
     private String dir;
     private String fileName;
     private int size;
@@ -51,8 +53,7 @@ public class CreateMultiPartObject extends MantaTester {
 
     @Override
     public void setupTest(final JavaSamplerContext context) {
-        System.out.println("Setup being called");
-
+        LOG.debug("Setup being called");
     }
 
     /**
@@ -61,7 +62,7 @@ public class CreateMultiPartObject extends MantaTester {
      */
     @Override
     public Arguments getDefaultParameters() {
-        System.out.println("Parameters beign called");
+        LOG.debug("Parameters beign called");
         Arguments params = super.getDefaultParameters();
         params.addArgument("multipart", "true");
         params.addArgument("size", String.valueOf(size));
@@ -124,9 +125,9 @@ public class CreateMultiPartObject extends MantaTester {
         try (MantaClient client = new MantaClient(config)) {
             result.sampleStart();
             if (multipart) {
-                System.out.println("**************** Multipart : Yes ****************");
+                LOG.debug("**************** Multipart : Yes ****************");
                 if (encrypted) {
-                    System.out.println("**************** Encrypted : Yes ****************");
+                    LOG.debug("**************** Encrypted : Yes ****************");
                     EncryptedServerSideMultipartManager multipart = new EncryptedServerSideMultipartManager(client);
                     encryptedMultipartUpload(multipart, uploadObject, size, splitSize);
                     result.sampleEnd();
@@ -134,7 +135,7 @@ public class CreateMultiPartObject extends MantaTester {
                     result.setResponseData("Multipart file uploaded successfully.".getBytes());
                     result.setSuccessful(true);
                 } else {
-                    System.out.println("**************** Encrypted : Noooooooo ****************");
+                    LOG.debug("**************** Encrypted : Noooooooo ****************");
                     ServerSideMultipartManager encryptMultipart = new ServerSideMultipartManager(client);
                     multipartUpload(encryptMultipart, uploadObject, size, splitSize);
                     result.sampleEnd();
@@ -161,14 +162,14 @@ public class CreateMultiPartObject extends MantaTester {
         return result;
     }
 
-    private static void encryptedMultipartUpload(final EncryptedServerSideMultipartManager multipart,
+    private void encryptedMultipartUpload(final EncryptedServerSideMultipartManager multipart,
                                                  final String uploadObject,
                                                  final int size,
                                                  final int split) throws IOException {
-        System.out.println("*********    Using the encrypted manager *********");
+        LOG.debug("*********    Using the encrypted manager *********");
         int numUploads = size / split;
-        System.out.println("Splitting object : " + uploadObject + " for split upload");
-        System.out.println("Creating " + numUploads + " for multipart" + size + " : " + split + " : " + (size / split)
+        LOG.debug("Splitting object : " + uploadObject + " for split upload");
+        LOG.debug("Creating " + numUploads + " for multipart" + size + " : " + split + " : " + (size / split)
                 + (size % split));
         EncryptedMultipartUpload<ServerSideMultipartUpload> upload = multipart.initiateUpload(uploadObject);
         MantaMultipartUploadTuple[] parts = new MantaMultipartUploadTuple[numUploads];
@@ -177,17 +178,17 @@ public class CreateMultiPartObject extends MantaTester {
         }
         Stream<MantaMultipartUploadTuple> partsStream = Arrays.stream(parts);
         multipart.complete(upload, partsStream);
-        System.out.println(uploadObject + " is now assembled!");
+        LOG.debug(uploadObject + " is now assembled!");
     }
 
-    private static void multipartUpload(final ServerSideMultipartManager multipart,
+    private void multipartUpload(final ServerSideMultipartManager multipart,
                                         final String uploadObject,
                                         final int size,
                                         final int split)
             throws IOException {
         int numUploads = size / split;
-        System.out.println("Splitting object : " + uploadObject + " for split upload");
-        System.out.println("Creating " + numUploads + " for multipart" + size + " : " + split + " : " + (size / split)
+        LOG.debug("Splitting object : " + uploadObject + " for split upload");
+        LOG.debug("Creating " + numUploads + " for multipart" + size + " : " + split + " : " + (size / split)
                 + (size % split));
         ServerSideMultipartUpload upload = multipart.initiateUpload(uploadObject);
         MantaMultipartUploadTuple[] parts = new MantaMultipartUploadTuple[numUploads];
@@ -196,7 +197,7 @@ public class CreateMultiPartObject extends MantaTester {
         }
         Stream<MantaMultipartUploadTuple> partsStream = Arrays.stream(parts);
         multipart.complete(upload, partsStream);
-        System.out.println(uploadObject + " is now assembled!");
+        LOG.debug(uploadObject + " is now assembled!");
     }
 
     @Override
@@ -206,9 +207,4 @@ public class CreateMultiPartObject extends MantaTester {
                 + ", encrypted=" + encrypted + ", timeout=" + timeout + ", retries=" + retries + ", maxConnections="
                 + maxConnections + "]";
     }
-
-    public JMeterContext getThreadContext() {
-        return JMeterContextService.getContext();
-    }
-
 }

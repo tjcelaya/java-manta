@@ -10,8 +10,8 @@ import com.joyent.manta.config.SystemSettingsConfigContext;
 import org.apache.jmeter.config.Arguments;
 import org.apache.jmeter.protocol.java.sampler.JavaSamplerContext;
 import org.apache.jmeter.samplers.SampleResult;
-import org.apache.jmeter.threads.JMeterContext;
-import org.apache.jmeter.threads.JMeterContextService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.List;
@@ -25,11 +25,15 @@ import java.util.stream.Stream;
  * @author DouglasAnderson
  */
 public class DirectoryListing extends MantaTester {
+
+    private static final Logger LOG = LoggerFactory.getLogger(DirectoryListing.class);
+
     private String baseDir = "";
     private String filter = "";
 
     @Override
     public void setupTest(final JavaSamplerContext context) {
+        LOG.debug("DirectoryListing setup");
     }
 
     @Override
@@ -61,7 +65,7 @@ public class DirectoryListing extends MantaTester {
             Stream<MantaObject> listing = client.listObjects(baseDir);
             result.setSamplerData("mls " + baseDir);
             List<MantaObject> objList = listing.filter(item -> {
-                System.out.println(item.getPath() + " : " + filter + " : " + item.getPath().contains(filter));
+                LOG.debug(item.getPath() + " : " + filter + " : " + item.getPath().contains(filter));
                 return item.getPath().contains(filter);
             }).collect(Collectors.toList());
             String resultString = "{\"Results\":[";

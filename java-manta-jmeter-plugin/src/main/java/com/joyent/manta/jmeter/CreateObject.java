@@ -19,6 +19,8 @@ import org.apache.jmeter.protocol.java.sampler.JavaSamplerContext;
 import org.apache.jmeter.samplers.SampleResult;
 import org.apache.jmeter.threads.JMeterContext;
 import org.apache.jmeter.threads.JMeterContextService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -30,6 +32,8 @@ import java.util.Random;
  * @author DouglasAnderson
  */
 public class CreateObject extends MantaTester {
+    private static final Logger LOG = LoggerFactory.getLogger(CreateObject.class);
+
     private boolean isBase;
     private StringBuffer dir;
     private int id;
@@ -39,13 +43,13 @@ public class CreateObject extends MantaTester {
 
     @Override
     public void setupTest(final JavaSamplerContext context) {
-        System.out.println("Setup being called");
-
+        LOG.debug("Setup being called");
+        LOG.debug("Setup being called");
     }
 
     @Override
     public Arguments getDefaultParameters() {
-        System.out.println("Parameters beign called");
+        LOG.debug("Parameters beign called");
         Arguments params = super.getDefaultParameters();
         params.addArgument("size", String.valueOf(size));
         params.addArgument("id", "${__threadNum}_");
@@ -74,7 +78,7 @@ public class CreateObject extends MantaTester {
 
         ConfigContext config = new ChainedConfigContext(new DefaultsConfigContext(), new EnvVarConfigContext(),
                 new SystemSettingsConfigContext());
-        System.out.println(dir + " : " + id + iteration);
+        LOG.debug(dir + " : " + id + iteration);
         dir.append(String.format("/obj-%04d-%02d", id, iteration));
         try (MantaClient client = new MantaClient(config)) {
             result.sampleStart();

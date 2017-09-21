@@ -13,6 +13,8 @@ import com.joyent.manta.config.SystemSettingsConfigContext;
 import org.apache.jmeter.config.Arguments;
 import org.apache.jmeter.protocol.java.sampler.JavaSamplerContext;
 import org.apache.jmeter.samplers.SampleResult;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -27,6 +29,9 @@ import java.util.stream.Stream;
  * @author DouglasAnderson z
  */
 public class UploadGeneratedFile extends MantaTester {
+
+    private static final Logger LOG = LoggerFactory.getLogger(UploadGeneratedFile.class);
+
     private String dir;
     private int splitSize;
     private int noOfSplits;
@@ -42,7 +47,7 @@ public class UploadGeneratedFile extends MantaTester {
 
     @Override
     public void setupTest(final JavaSamplerContext context) {
-        System.out.println("Setup being called");
+        LOG.debug("Setup being called");
     }
 
     @Override

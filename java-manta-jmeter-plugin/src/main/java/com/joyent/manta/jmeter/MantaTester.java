@@ -20,9 +20,12 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
 
-public class MantaTester extends AbstractJavaSamplerClient {
+public abstract class MantaTester extends AbstractJavaSamplerClient {
     private Map<String, String> mapParams = new HashMap<String, String>();
+
+    protected static final AtomicReference<MantaClient> mantaClientRef = new AtomicReference<>(null);
 
     protected int size = 1024;
     protected int depth = 7;
@@ -30,7 +33,6 @@ public class MantaTester extends AbstractJavaSamplerClient {
             + new SimpleDateFormat("yyyyMMdd-HHmmss.S").format(new Date());
 
     public MantaTester() {
-
     }
 
     @Override
@@ -48,6 +50,17 @@ public class MantaTester extends AbstractJavaSamplerClient {
         if (mapParams.containsKey("dir")) {
             basedir = mapParams.get("dir");
         }
+
+        ensureMantaClientInitialized();
+    }
+
+    private void ensureMantaClientInitialized() {
+        if (mantaClientRef.get() != null) {
+            return;
+        }
+        final ConfigContext config = new ChainedConfigContext(new DefaultsConfigContext(), new EnvVarConfigContext());
+        final MantaClient client = new MantaClient(config);
+        mantaClientRef.compareAndSet(null, client);
     }
 
     @Override
