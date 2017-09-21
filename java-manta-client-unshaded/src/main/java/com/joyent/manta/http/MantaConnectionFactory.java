@@ -113,14 +113,18 @@ public class MantaConnectionFactory implements Closeable {
     );
 
     /**
+     * User Agent string identifying Manta Client and Java version.
+     */
+    private static final String USER_AGENT = String.format(
+            "Java-Manta-SDK/%s (Java/%s/%s)",
+            MantaVersion.VERSION,
+            System.getProperty("java.version"),
+            System.getProperty("java.vendor"));
+
+    /**
      * Configuration context that provides connection details.
      */
     private final ConfigContext config;
-
-    /**
-     * HTTP Signatures authentication configuration helper.
-     */
-    private final HttpSignatureConfigurator signatureConfigurator;
 
     /**
      * Apache HTTP Client connection builder helper.
@@ -148,7 +152,7 @@ public class MantaConnectionFactory implements Closeable {
      *
      * @param config  configuration of the connection parameters
      * @param keyPair cryptographic signing key pair used for HTTP signatures
-     * @param signer  Signer configured to work with the the given keyPair
+     * @param signer  Signer configured to use the given keyPair
      */
     public MantaConnectionFactory(final ConfigContext config,
                                   final KeyPair keyPair,
@@ -159,9 +163,10 @@ public class MantaConnectionFactory implements Closeable {
     /**
      * Create new instance using the passed configuration.
      *
-     * @param config  configuration of the connection parameters
-     * @param keyPair cryptographic signing key pair used for HTTP signatures
-     * @param signer  Signer configured to work with the the given keyPair
+     * @param config        configuration of the connection parameters
+     * @param keyPair       cryptographic signing key pair used for HTTP signatures
+     * @param signer        Signer configured to use the given keyPair
+     * @param clientBuilder existing HttpClientBuilder to further configure, or null
      */
     public MantaConnectionFactory(final ConfigContext config,
                                   final KeyPair keyPair,
@@ -171,32 +176,34 @@ public class MantaConnectionFactory implements Closeable {
 
         CONNECTION_FACTORY_COUNT.incrementAndGet();
 
+        ConfigContext.validate(config);
+
         this.config = config;
-
-        // Setup configurator helper
-
-        final HttpSignatureAuthScheme authScheme;
-
-        // If we have auth disabled, then we don't assign any signer classes
-        if (ObjectUtils.firstNonNull(
-                config.noAuth(),
-                DefaultsConfigContext.DEFAULT_NO_AUTH)) {
-            this.signatureConfigurator = null;
-            authScheme = null;
-            this.signerThreadLocalRef = new WeakReference<>(null);
-        // When auth is enabled we assign a configurator that sets up signing
-        } else {
-            this.signatureConfigurator = new HttpSignatureConfigurator(
-                    keyPair,
-                    createCredentials(),
-                    signer);
-            this.signerThreadLocalRef = new WeakReference<>(signer);
-            authScheme = (HttpSignatureAuthScheme) this.signatureConfigurator.getAuthScheme();
-        }
 
         this.connectionManager = buildConnectionManager();
 
-        this.httpClientBuilder = createBuilder(authScheme, clientBuilder);
+        this.httpClientBuilder = createBuilder(clientBuilder);
+
+        final boolean authDisabled = ObjectUtils.firstNonNull(
+                config.noAuth(),
+                DefaultsConfigContext.DEFAULT_NO_AUTH);
+
+        if (authDisabled) {
+            this.signerThreadLocalRef = new WeakReference<>(null);
+        } else {
+            this.signerThreadLocalRef = new WeakReference<>(signer);
+            final Credentials credentials = new UsernamePasswordCredentials(config.getMantaUser(), null);
+            final HttpSignatureAuthScheme authScheme = (HttpSignatureAuthScheme) new HttpSignatureConfigurator(
+                    keyPair,
+                    credentials,
+                    signer).getAuthScheme();
+
+            // pass true directly to the constructor because auth is enabled
+            this.httpClientBuilder.addInterceptorLast(
+                    new HttpSignatureRequestInterceptor(authScheme, credentials, true));
+
+        }
+
         this.jmxDynamicBeans = buildMBeans();
 
         registerMBeans();
@@ -362,16 +369,10 @@ public class MantaConnectionFactory implements Closeable {
      * Configures the builder class with all of the settings needed to connect to
      * Manta.
      *
-     * @param authScheme authentication scheme to use (null if noAuth is enabled)
      * @param suppliedBuilder a preconfigured HttpClientBuilder we can further customize
      * @return configured instance
      */
-    protected HttpClientBuilder createBuilder(final HttpSignatureAuthScheme authScheme,
-                                              final HttpClientBuilder suppliedBuilder) {
-        final boolean noAuth = ObjectUtils.firstNonNull(
-                config.noAuth(),
-                DefaultsConfigContext.DEFAULT_NO_AUTH);
-
+    protected HttpClientBuilder createBuilder(final HttpClientBuilder suppliedBuilder) {
         final int maxConns = ObjectUtils.firstNonNull(
                 config.getMaximumConnections(),
                 DefaultsConfigContext.DEFAULT_MAX_CONNS);
@@ -381,12 +382,6 @@ public class MantaConnectionFactory implements Closeable {
                 DefaultsConfigContext.DEFAULT_HTTP_TIMEOUT);
 
         final long requestTimeout = Duration.ofSeconds(1L).toMillis();
-
-        final String userAgent = String.format(
-                "Java-Manta-SDK/%s (Java/%s/%s)",
-                MantaVersion.VERSION,
-                System.getProperty("java.version"),
-                System.getProperty("java.vendor"));
 
         final RequestConfig requestConfig = RequestConfig.custom()
                 .setAuthenticationEnabled(false)
@@ -405,14 +400,14 @@ public class MantaConnectionFactory implements Closeable {
 
         builder.disableAuthCaching()
                 .disableCookieManagement()
+                .setDefaultHeaders(HEADERS)
+                .setUserAgent(USER_AGENT)
                 .setConnectionReuseStrategy(new DefaultConnectionReuseStrategy())
                 .setMaxConnTotal(maxConns)
                 .setKeepAliveStrategy(new DefaultConnectionKeepAliveStrategy())
-                .setDefaultHeaders(HEADERS)
                 .setDefaultRequestConfig(requestConfig)
                 .setConnectionManagerShared(false)
-                .setConnectionBackoffStrategy(new DefaultBackoffStrategy())
-                .setUserAgent(userAgent);
+                .setConnectionBackoffStrategy(new DefaultBackoffStrategy());
 
         if (config.getRetries() > 0) {
             builder.setRetryHandler(new MantaHttpRequestRetryHandler(config))
@@ -431,28 +426,7 @@ public class MantaConnectionFactory implements Closeable {
         builder.addInterceptorFirst(new RequestIdInterceptor());
         builder.setConnectionManager(this.connectionManager);
 
-        if (!noAuth && authScheme != null) {
-            builder.addInterceptorLast(new HttpSignatureRequestInterceptor(
-                    authScheme,
-                    this.createCredentials(),
-                    !this.config.noAuth()));
-
-        }
-
         return builder;
-    }
-
-    /**
-     * Creates a {@link Credentials} instance based on the stored
-     * {@link ConfigContext}.
-     *
-     * @return credentials for Manta
-     */
-    protected Credentials createCredentials() {
-        final String user = config.getMantaUser();
-        Validate.notNull(user, "User must not be null");
-
-        return new UsernamePasswordCredentials(user, null);
     }
 
     /**
