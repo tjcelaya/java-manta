@@ -59,122 +59,10 @@
           </elementProp>
         </collectionProp>
       </elementProp>
-      <stringProp name="TestPlan.user_define_classpath">/Users/tomascelaya/repo/java-manta/java-manta-jmeter-plugin/target/jmeter/lib/ext/java-manta-client-3.1.7-SNAPSHOT.jar,/Users/tomascelaya/repo/java-manta/java-manta-jmeter-plugin/target/jmeter/lib/ext/java-manta-jmeter-plugin-3.1.7-SNAPSHOT.jar</stringProp>
+      <stringProp name="TestPlan.user_define_classpath"></stringProp>
       <boolProp name="TestPlan.tearDown_on_shutdown">true</boolProp>
     </TestPlan>
     <hashTree>
-      <ResultCollector guiclass="ViewResultsFullVisualizer" testclass="ResultCollector" testname="View Results Tree" enabled="true">
-        <boolProp name="ResultCollector.error_logging">false</boolProp>
-        <objProp>
-          <name>saveConfig</name>
-          <value class="SampleSaveConfiguration">
-            <time>true</time>
-            <latency>true</latency>
-            <timestamp>true</timestamp>
-            <success>true</success>
-            <label>true</label>
-            <code>true</code>
-            <message>true</message>
-            <threadName>true</threadName>
-            <dataType>true</dataType>
-            <encoding>false</encoding>
-            <assertions>true</assertions>
-            <subresults>true</subresults>
-            <responseData>false</responseData>
-            <samplerData>false</samplerData>
-            <xml>false</xml>
-            <fieldNames>true</fieldNames>
-            <responseHeaders>false</responseHeaders>
-            <requestHeaders>false</requestHeaders>
-            <responseDataOnError>false</responseDataOnError>
-            <saveAssertionResultsFailureMessage>true</saveAssertionResultsFailureMessage>
-            <assertionsResultsToSave>0</assertionsResultsToSave>
-            <bytes>true</bytes>
-            <sentBytes>true</sentBytes>
-            <threadCounts>true</threadCounts>
-            <idleTime>true</idleTime>
-            <connectTime>true</connectTime>
-          </value>
-        </objProp>
-        <stringProp name="filename">results.tree.csv</stringProp>
-      </ResultCollector>
-      <hashTree/>
-      <ResultCollector guiclass="SummaryReport" testclass="ResultCollector" testname="Summary Report" enabled="true">
-        <boolProp name="ResultCollector.error_logging">false</boolProp>
-        <objProp>
-          <name>saveConfig</name>
-          <value class="SampleSaveConfiguration">
-            <time>true</time>
-            <latency>true</latency>
-            <timestamp>true</timestamp>
-            <success>true</success>
-            <label>true</label>
-            <code>true</code>
-            <message>true</message>
-            <threadName>true</threadName>
-            <dataType>true</dataType>
-            <encoding>false</encoding>
-            <assertions>true</assertions>
-            <subresults>true</subresults>
-            <responseData>false</responseData>
-            <samplerData>false</samplerData>
-            <xml>false</xml>
-            <fieldNames>true</fieldNames>
-            <responseHeaders>false</responseHeaders>
-            <requestHeaders>false</requestHeaders>
-            <responseDataOnError>false</responseDataOnError>
-            <saveAssertionResultsFailureMessage>true</saveAssertionResultsFailureMessage>
-            <assertionsResultsToSave>0</assertionsResultsToSave>
-            <bytes>true</bytes>
-            <sentBytes>true</sentBytes>
-            <threadCounts>true</threadCounts>
-            <idleTime>true</idleTime>
-            <connectTime>true</connectTime>
-          </value>
-        </objProp>
-        <stringProp name="filename">results.full.csv</stringProp>
-      </ResultCollector>
-      <hashTree/>
-      <ResultCollector guiclass="SimpleDataWriter" testclass="ResultCollector" testname="Simple Data Writer" enabled="true">
-        <boolProp name="ResultCollector.error_logging">false</boolProp>
-        <objProp>
-          <name>saveConfig</name>
-          <value class="SampleSaveConfiguration">
-            <time>true</time>
-            <latency>true</latency>
-            <timestamp>true</timestamp>
-            <success>true</success>
-            <label>true</label>
-            <code>true</code>
-            <message>true</message>
-            <threadName>true</threadName>
-            <dataType>true</dataType>
-            <encoding>true</encoding>
-            <assertions>true</assertions>
-            <subresults>true</subresults>
-            <responseData>true</responseData>
-            <samplerData>true</samplerData>
-            <xml>true</xml>
-            <fieldNames>false</fieldNames>
-            <responseHeaders>true</responseHeaders>
-            <requestHeaders>true</requestHeaders>
-            <responseDataOnError>false</responseDataOnError>
-            <saveAssertionResultsFailureMessage>true</saveAssertionResultsFailureMessage>
-            <assertionsResultsToSave>0</assertionsResultsToSave>
-            <bytes>true</bytes>
-            <sentBytes>true</sentBytes>
-            <url>true</url>
-            <fileName>true</fileName>
-            <hostname>true</hostname>
-            <threadCounts>true</threadCounts>
-            <sampleCount>true</sampleCount>
-            <idleTime>true</idleTime>
-            <connectTime>true</connectTime>
-          </value>
-        </objProp>
-        <stringProp name="filename">requests.xml</stringProp>
-      </ResultCollector>
-      <hashTree/>
       <SetupThreadGroup guiclass="SetupThreadGroupGui" testclass="SetupThreadGroup" testname="setUp Thread Group" enabled="true">
         <stringProp name="ThreadGroup.on_sample_error">continue</stringProp>
         <elementProp name="ThreadGroup.main_controller" elementType="LoopController" guiclass="LoopControlPanel" testclass="LoopController" testname="Loop Controller" enabled="true">
@@ -225,7 +113,7 @@
               </elementProp>
             </collectionProp>
           </elementProp>
-          <stringProp name="classname">org.apache.jmeter.protocol.java.test.JavaTest</stringProp>
+          <stringProp name="classname">com.joyent.manta.jmeter.CreateDirectory</stringProp>
         </JavaSampler>
         <hashTree>
           <JSONPostProcessor guiclass="JSONPostProcessorGui" testclass="JSONPostProcessor" testname="Getting Base Directory" enabled="true">
@@ -258,7 +146,7 @@
               </elementProp>
             </collectionProp>
           </elementProp>
-          <stringProp name="classname">org.apache.jmeter.protocol.java.test.JavaTest</stringProp>
+          <stringProp name="classname">com.joyent.manta.jmeter.GeneratedFile</stringProp>
         </JavaSampler>
         <hashTree/>
       </hashTree>
@@ -361,7 +249,7 @@ vars.put(&quot;baseDir&quot;, directory);
                   </elementProp>
                 </collectionProp>
               </elementProp>
-              <stringProp name="classname">org.apache.jmeter.protocol.java.test.JavaTest</stringProp>
+              <stringProp name="classname">com.joyent.manta.jmeter.CreateDirectory</stringProp>
             </JavaSampler>
             <hashTree>
               <JSONPostProcessor guiclass="JSONPostProcessorGui" testclass="JSONPostProcessor" testname="Update Directory" enabled="true">
@@ -446,7 +334,7 @@ But it is ignored if you give an array of files.</stringProp>
                       </elementProp>
                     </collectionProp>
                   </elementProp>
-                  <stringProp name="classname">org.apache.jmeter.protocol.java.test.JavaTest</stringProp>
+                  <stringProp name="classname">com.joyent.manta.jmeter.UploadMultipartFile</stringProp>
                 </JavaSampler>
                 <hashTree/>
               </hashTree>
@@ -518,7 +406,7 @@ But it is ignored if you give an array of files.</stringProp>
                       </elementProp>
                     </collectionProp>
                   </elementProp>
-                  <stringProp name="classname">org.apache.jmeter.protocol.java.test.JavaTest</stringProp>
+                  <stringProp name="classname">com.joyent.manta.jmeter.UploadMultipartFile</stringProp>
                 </JavaSampler>
                 <hashTree/>
               </hashTree>
@@ -553,7 +441,7 @@ But it is ignored if you give an array of files.</stringProp>
                       </elementProp>
                     </collectionProp>
                   </elementProp>
-                  <stringProp name="classname">org.apache.jmeter.protocol.java.test.JavaTest</stringProp>
+                  <stringProp name="classname">com.joyent.manta.jmeter.DownloadObject</stringProp>
                 </JavaSampler>
                 <hashTree/>
                 <SystemSampler guiclass="SystemSamplerGui" testclass="SystemSampler" testname="Diff the original vs downloaded." enabled="true">
@@ -625,7 +513,7 @@ But it is ignored if you give an array of files.</stringProp>
                   <hashTree/>
                 </hashTree>
               </hashTree>
-              <JavaSampler guiclass="JavaTestSamplerGui" testclass="JavaSampler" testname="Directory Listing" enabled="true">
+              <JavaSampler guiclass="JavaTestSamplerGui" testclass="JavaSampler" testname="Directoty Listing" enabled="true">
                 <elementProp name="arguments" elementType="Arguments" guiclass="ArgumentsPanel" testclass="Arguments" enabled="true">
                   <collectionProp name="Arguments.arguments">
                     <elementProp name="directory" elementType="Argument">
@@ -640,7 +528,7 @@ But it is ignored if you give an array of files.</stringProp>
                     </elementProp>
                   </collectionProp>
                 </elementProp>
-                <stringProp name="classname">org.apache.jmeter.protocol.java.test.JavaTest</stringProp>
+                <stringProp name="classname">com.joyent.manta.jmeter.DirectoryListing</stringProp>
               </JavaSampler>
               <hashTree>
                 <BeanShellPostProcessor guiclass="TestBeanGUI" testclass="BeanShellPostProcessor" testname="BeanShell PostProcessor" enabled="true">
@@ -738,7 +626,7 @@ But it is ignored if you give an array of files.</stringProp>
                       </elementProp>
                     </collectionProp>
                   </elementProp>
-                  <stringProp name="classname">org.apache.jmeter.protocol.java.test.JavaTest</stringProp>
+                  <stringProp name="classname">com.joyent.manta.jmeter.UploadGeneratedFile</stringProp>
                 </JavaSampler>
                 <hashTree/>
               </hashTree>
@@ -775,11 +663,11 @@ But it is ignored if you give an array of files.</stringProp>
                       </elementProp>
                     </collectionProp>
                   </elementProp>
-                  <stringProp name="classname">org.apache.jmeter.protocol.java.test.JavaTest</stringProp>
+                  <stringProp name="classname">com.joyent.manta.jmeter.CreateObject</stringProp>
                 </JavaSampler>
                 <hashTree/>
               </hashTree>
-              <JavaSampler guiclass="JavaTestSamplerGui" testclass="JavaSampler" testname="Directory Listing" enabled="true">
+              <JavaSampler guiclass="JavaTestSamplerGui" testclass="JavaSampler" testname="Directoty Listing" enabled="true">
                 <elementProp name="arguments" elementType="Arguments" guiclass="ArgumentsPanel" testclass="Arguments" enabled="true">
                   <collectionProp name="Arguments.arguments">
                     <elementProp name="directory" elementType="Argument">
@@ -794,7 +682,7 @@ But it is ignored if you give an array of files.</stringProp>
                     </elementProp>
                   </collectionProp>
                 </elementProp>
-                <stringProp name="classname">org.apache.jmeter.protocol.java.test.JavaTest</stringProp>
+                <stringProp name="classname">com.joyent.manta.jmeter.DirectoryListing</stringProp>
               </JavaSampler>
               <hashTree>
                 <BeanShellPostProcessor guiclass="TestBeanGUI" testclass="BeanShellPostProcessor" testname="BeanShell PostProcessor" enabled="true">
@@ -853,49 +741,29 @@ vars.put(&quot;baseDir&quot;, directory);
           <JavaSampler guiclass="JavaTestSamplerGui" testclass="JavaSampler" testname="Java Request" enabled="true">
             <elementProp name="arguments" elementType="Arguments" guiclass="ArgumentsPanel" testclass="Arguments" enabled="true">
               <collectionProp name="Arguments.arguments">
-                <elementProp name="Sleep_Time" elementType="Argument">
-                  <stringProp name="Argument.name">Sleep_Time</stringProp>
-                  <stringProp name="Argument.value">100</stringProp>
+                <elementProp name="Manta URL" elementType="Argument">
+                  <stringProp name="Argument.name">Manta URL</stringProp>
+                  <stringProp name="Argument.value">https://eu-central.manta.samsungcloud.io/</stringProp>
                   <stringProp name="Argument.metadata">=</stringProp>
                 </elementProp>
-                <elementProp name="Sleep_Mask" elementType="Argument">
-                  <stringProp name="Argument.name">Sleep_Mask</stringProp>
-                  <stringProp name="Argument.value">0xFF</stringProp>
+                <elementProp name="MANTA_USER" elementType="Argument">
+                  <stringProp name="Argument.name">MANTA_USER</stringProp>
+                  <stringProp name="Argument.value">douglas.anderson</stringProp>
                   <stringProp name="Argument.metadata">=</stringProp>
                 </elementProp>
-                <elementProp name="Label" elementType="Argument">
-                  <stringProp name="Argument.name">Label</stringProp>
-                  <stringProp name="Argument.value"></stringProp>
+                <elementProp name="MANTA_KEY_ID" elementType="Argument">
+                  <stringProp name="Argument.name">MANTA_KEY_ID</stringProp>
+                  <stringProp name="Argument.value">SHA256:vyyDe0jZ+A9XiSvfbsDVrI9X6AdhSzNac33a9tIoq5g</stringProp>
                   <stringProp name="Argument.metadata">=</stringProp>
                 </elementProp>
-                <elementProp name="ResponseCode" elementType="Argument">
-                  <stringProp name="Argument.name">ResponseCode</stringProp>
-                  <stringProp name="Argument.value"></stringProp>
-                  <stringProp name="Argument.metadata">=</stringProp>
-                </elementProp>
-                <elementProp name="ResponseMessage" elementType="Argument">
-                  <stringProp name="Argument.name">ResponseMessage</stringProp>
-                  <stringProp name="Argument.value"></stringProp>
-                  <stringProp name="Argument.metadata">=</stringProp>
-                </elementProp>
-                <elementProp name="Status" elementType="Argument">
-                  <stringProp name="Argument.name">Status</stringProp>
-                  <stringProp name="Argument.value">OK</stringProp>
-                  <stringProp name="Argument.metadata">=</stringProp>
-                </elementProp>
-                <elementProp name="SamplerData" elementType="Argument">
-                  <stringProp name="Argument.name">SamplerData</stringProp>
-                  <stringProp name="Argument.value"></stringProp>
-                  <stringProp name="Argument.metadata">=</stringProp>
-                </elementProp>
-                <elementProp name="ResultData" elementType="Argument">
-                  <stringProp name="Argument.name">ResultData</stringProp>
-                  <stringProp name="Argument.value"></stringProp>
+                <elementProp name="directory" elementType="Argument">
+                  <stringProp name="Argument.name">directory</stringProp>
+                  <stringProp name="Argument.value">${baseDir}</stringProp>
                   <stringProp name="Argument.metadata">=</stringProp>
                 </elementProp>
               </collectionProp>
             </elementProp>
-            <stringProp name="classname">org.apache.jmeter.protocol.java.test.JavaTest</stringProp>
+            <stringProp name="classname">com.joyent.manta.jmeter.DeleteDirectory</stringProp>
           </JavaSampler>
           <hashTree/>
           <SystemSampler guiclass="SystemSamplerGui" testclass="SystemSampler" testname="Delete the generated file" enabled="true">
@@ -932,3 +800,4 @@ vars.put(&quot;baseDir&quot;, directory);
     </hashTree>
   </hashTree>
 </jmeterTestPlan>
+
