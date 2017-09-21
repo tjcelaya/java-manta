@@ -37,8 +37,11 @@
                         <artifact>com.joyent.manta:java-manta-jmeter-plugin:${project.version}</artifact>
                         <artifact>com.joyent.manta:java-manta-client:${project.version}</artifact>
                     </jmeterExtensions>
-                    <!-- Uncomment to enable debug logging for jmeter -->
-                     <overrideRootLogLevel>debug</overrideRootLogLevel>
+                    <!--
+                    Uncomment to enable excessive debug logging for jmeter.
+                    Tweaking ${basedir}/src/test/conf/log4j2.xml is recommended instead
+                     -->
+                    <!--<overrideRootLogLevel>debug</overrideRootLogLevel>-->
                 </configuration>
             </plugin>
 
