@@ -68,7 +68,7 @@ public class StandardHttpHelper implements HttpHelper {
     /**
      * Current connection context used for maintaining state between requests.
      */
-    private final MantaConnectionContext connectionContext;
+    protected final MantaConnectionContext connectionContext;
 
     /**
      * Flag toggling the checksum verification of uploaded files.
@@ -534,10 +534,6 @@ public class StandardHttpHelper implements HttpHelper {
         } else {
             return code != expectedStatusCode;
         }
-    }
-
-    protected MantaConnectionContext getConnectionContext() {
-        return connectionContext;
     }
 
     /**

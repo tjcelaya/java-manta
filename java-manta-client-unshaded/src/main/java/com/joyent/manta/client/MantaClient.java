@@ -164,6 +164,8 @@ public class MantaClient implements AutoCloseable {
     private final Set<AutoCloseable> danglingStreams
             = (Collections.newSetFromMap(new ConcurrentWeakIdentityHashMap<>()));
 
+    private final ThreadLocalSigner signer;
+
     /**
      * Instance used to generate Manta signed URIs.
      */
@@ -179,6 +181,9 @@ public class MantaClient implements AutoCloseable {
      */
     private final MantaConnectionFactory connectionFactory;
 
+    /**
+     * Helper class for creating request objects.
+     */
     private final MantaHttpRequestFactory requestFactory;
 
     /* We preform some sanity checks against the JVM in order to determine if
@@ -214,7 +219,7 @@ public class MantaClient implements AutoCloseable {
                 DefaultsConfigContext.DEFAULT_DISABLE_NATIVE_SIGNATURES)) {
             builder.providerCode("stdlib");
         }
-        final ThreadLocalSigner signer = new ThreadLocalSigner(builder);
+        this.signer = new ThreadLocalSigner(builder);
 
         this.requestFactory = new MantaHttpRequestFactory(config.getMantaURL());
         this.connectionFactory = new MantaConnectionFactory(config, keyPair, signer);
@@ -252,6 +257,7 @@ public class MantaClient implements AutoCloseable {
         this.url = mantaURL;
         this.config = config;
         this.home = ConfigContext.deriveHomeDirectoryFromUser(account);
+        this.signer = signer;
 
         this.requestFactory = new MantaHttpRequestFactory(config.getMantaURL());
         this.connectionFactory = connectionFactory;
@@ -549,8 +555,7 @@ public class MantaClient implements AutoCloseable {
         Validate.notNull(rawPath, "Path must not be null");
         String path = formatPath(rawPath);
 
-        return new MantaSeekableByteChannel(path, position,
-                this.connectionFactory, this.httpHelper);
+        return new MantaSeekableByteChannel(path, position, this.requestFactory, this.httpHelper);
     }
 
     /**
@@ -569,8 +574,7 @@ public class MantaClient implements AutoCloseable {
         Validate.notNull(rawPath, "Path must not be null");
         String path = formatPath(rawPath);
 
-        return new MantaSeekableByteChannel(path, this.connectionFactory,
-                this.httpHelper);
+        return new MantaSeekableByteChannel(path, this.requestFactory, this.httpHelper);
     }
 
     /**

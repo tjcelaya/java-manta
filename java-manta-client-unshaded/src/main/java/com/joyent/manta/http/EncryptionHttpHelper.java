@@ -941,7 +941,7 @@ public class EncryptionHttpHelper extends StandardHttpHelper {
         put.setHeaders(updateHeaders.asApacheHttpHeaders());
         put.setEntity(NoContentEntity.INSTANCE);
 
-        CloseableHttpClient client = getConnectionContext().getHttpClient();
+        CloseableHttpClient client = connectionContext.getHttpClient();
         CloseableHttpResponse originalContentLengthUpdateResponse = client.execute(put);
         IOUtils.closeQuietly(originalContentLengthUpdateResponse);
 
