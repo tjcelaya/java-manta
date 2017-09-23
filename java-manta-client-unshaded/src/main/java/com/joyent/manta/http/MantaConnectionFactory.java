@@ -22,7 +22,6 @@ import org.apache.http.Header;
 import org.apache.http.HttpHeaders;
 import org.apache.http.HttpHost;
 import org.apache.http.HttpRequestInterceptor;
-import org.apache.http.auth.Credentials;
 import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.config.ConnectionConfig;
@@ -122,13 +121,6 @@ public class MantaConnectionFactory implements Closeable, MBeanable {
      */
     public MantaConnectionFactory(final ConfigContext config,
                                   final KeyPair keyPair,
-                                  final ThreadLocalSigner signer) {
-        this(config, keyPair, signer, null);
-    }
-
-    /**
-     * Create new instance using the passed configuration.
-     *
                                   final ThreadLocalSigner signer) {
         this(config, keyPair, signer, null);
     }
