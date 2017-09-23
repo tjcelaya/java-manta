@@ -13,6 +13,7 @@ import com.joyent.manta.config.ConfigContext;
 import com.joyent.manta.config.KeyPairFactory;
 import com.joyent.manta.config.TestConfigContext;
 import com.joyent.manta.http.MantaConnectionFactory;
+import org.apache.commons.lang3.reflect.FieldUtils;
 import org.apache.http.HttpException;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpResponseFactory;
@@ -112,13 +113,22 @@ public class MantaClientConnectionFailuresIT {
         }
     }
 
-    public void canRetryOnNoHttpResponseException() throws IOException {
+    public void canRetryOnNoHttpResponseException() throws IOException, IllegalAccessException {
         final KeyPairFactory keyPairFactory = new KeyPairFactory(config);
         final KeyPair keyPair = keyPairFactory.createKeyPair();
         final ThreadLocalSigner signer = new ThreadLocalSigner(new Signer.Builder(keyPair));
-        MantaClient mantaClient = new MantaClient(config, keyPair,
-                                                  new NoHttpResponseMantaConnectionFactory(config, keyPair, signer),
-                                                  signer);
+        MantaClient mantaClient = new MantaClient(config);
+
+        final MantaConnectionFactory defaultConnectionFactory =
+                (MantaConnectionFactory) FieldUtils.readField(mantaClient, "connectionFactory", true);
+
+        if (defaultConnectionFactory != null) {
+            defaultConnectionFactory.close();
+        }
+
+        final Object noResponseConnectionFactory = new NoHttpResponseMantaConnectionFactory(config, keyPair, signer);
+        FieldUtils.writeField(mantaClient, "connectionFactory", noResponseConnectionFactory, true);
+
         String testPathPrefix = String.format("%s/stor/%s/",
                 config.getMantaHomeDirectory(), UUID.randomUUID());
 

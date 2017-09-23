@@ -164,6 +164,9 @@ public class MantaClient implements AutoCloseable {
     private final Set<AutoCloseable> danglingStreams
             = (Collections.newSetFromMap(new ConcurrentWeakIdentityHashMap<>()));
 
+    /**
+     * Signing object used for authentication and signed URL generation.
+     */
     private final ThreadLocalSigner signer;
 
     /**
@@ -186,6 +189,11 @@ public class MantaClient implements AutoCloseable {
      */
     private final MantaHttpRequestFactory requestFactory;
 
+    /**
+     * MBean supervisor.
+     */
+    private final MantaMBeanSupervisor beanSupervisor;
+
     /* We preform some sanity checks against the JVM in order to determine if
      * we can actually run on the platform. */
     static {
@@ -199,19 +207,16 @@ public class MantaClient implements AutoCloseable {
      * @param config The configuration context that provides all of the configuration values.
      */
     public MantaClient(final ConfigContext config) {
-        dumpConfig(config);
 
-        final String mantaURL = config.getMantaURL();
-        final String account = config.getMantaUser();
+        dumpConfig(config);
 
         ConfigContext.validate(config);
 
-        this.url = mantaURL;
         this.config = config;
-        this.home = ConfigContext.deriveHomeDirectoryFromUser(account);
+        this.url = config.getMantaURL();
+        this.home = ConfigContext.deriveHomeDirectoryFromUser(config.getMantaUser());
 
-        final KeyPairFactory keyPairFactory = new KeyPairFactory(config);
-        final KeyPair keyPair = keyPairFactory.createKeyPair();
+        final KeyPair keyPair = new KeyPairFactory(config).createKeyPair();
 
         final Signer.Builder builder = new Signer.Builder(keyPair);
         if (ObjectUtils.firstNonNull(
@@ -232,6 +237,11 @@ public class MantaClient implements AutoCloseable {
         }
 
         this.uriSigner = new UriSigner(this.config, keyPair, signer);
+
+        this.beanSupervisor = new MantaMBeanSupervisor();
+
+        this.config.createExposedMBean(beanSupervisor);
+        this.connectionFactory.createExposedMBean(beanSupervisor);
     }
 
     /**
@@ -249,14 +259,11 @@ public class MantaClient implements AutoCloseable {
                 final ThreadLocalSigner signer) {
         dumpConfig(config);
 
-        final String mantaURL = config.getMantaURL();
-        final String account = config.getMantaUser();
-
         ConfigContext.validate(config);
 
-        this.url = mantaURL;
+        this.url = config.getMantaURL();
         this.config = config;
-        this.home = ConfigContext.deriveHomeDirectoryFromUser(account);
+        this.home = ConfigContext.deriveHomeDirectoryFromUser(config.getMantaUser());
         this.signer = signer;
 
         this.requestFactory = new MantaHttpRequestFactory(config.getMantaURL());
@@ -270,6 +277,8 @@ public class MantaClient implements AutoCloseable {
         }
 
         this.uriSigner = new UriSigner(this.config, keyPair, signer);
+
+        this.beanSupervisor = null;
     }
 
     /**
@@ -2366,7 +2375,7 @@ public class MantaClient implements AutoCloseable {
                 /* Do nothing, but we won't capture the interrupted exception
                  * because even if we are interrupted, we want to close all open
                  * resources. */
-            } catch (Exception e) {
+            } catch (final Exception e) {
                 exceptions.add(e);
             }
         }
@@ -2377,15 +2386,31 @@ public class MantaClient implements AutoCloseable {
             /* Do nothing, but we won't capture the interrupted exception
              * because even if we are interrupted, we want to close all open
              * resources. */
-        } catch (Exception e) {
+        } catch (final Exception e) {
             exceptions.add(e);
         }
 
         try {
             connectionFactory.close();
-        } catch (Exception e) {
+        } catch (final Exception e) {
             exceptions.add(e);
         }
+
+        // Deregister associated MBeans
+        try {
+            beanSupervisor.close();
+        } catch (final Exception e) {
+            exceptions.add(e);
+        }
+
+        /* We clear all thread local instances of the signer class so that
+         * there are no dangling thread-local variables when the connection
+         * factory is closed (typically when MantaClient is closed).
+         */
+        if (this.signer != null) {
+            this.signer.clearAll();
+        }
+
 
         if (!exceptions.isEmpty()) {
             String msg = "At least one exception was thrown when performing close()";

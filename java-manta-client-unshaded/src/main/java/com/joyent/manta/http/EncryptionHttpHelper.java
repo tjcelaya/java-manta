@@ -374,7 +374,7 @@ public class EncryptionHttpHelper extends StandardHttpHelper {
             final String path = request.getURI().getPath();
 
             // Forward on all headers to the HEAD request
-            final HttpHead head = requestFactory.head(path);
+            final HttpHead head = getRequestFactory().head(path);
             head.setHeaders(request.getAllHeaders());
             head.removeHeaders(HttpHeaders.RANGE);
 
@@ -929,7 +929,7 @@ public class EncryptionHttpHelper extends StandardHttpHelper {
                                               final MantaMetadata metadata,
                                               final MantaObjectResponse response) throws IOException {
         List<NameValuePair> pairs = Collections.singletonList(new BasicNameValuePair("metadata", "true"));
-        HttpPut put = requestFactory.put(path, pairs);
+        HttpPut put = getRequestFactory().put(path, pairs);
         metadata.put(MantaHttpHeaders.ENCRYPTION_PLAINTEXT_CONTENT_LENGTH,
                 String.valueOf(encryptingEntity.getOriginalLength()));
 
@@ -941,8 +941,8 @@ public class EncryptionHttpHelper extends StandardHttpHelper {
         put.setHeaders(updateHeaders.asApacheHttpHeaders());
         put.setEntity(NoContentEntity.INSTANCE);
 
-        CloseableHttpClient client = connectionContext.getHttpClient();
-        CloseableHttpResponse originalContentLengthUpdateResponse = client.execute(put);
+        final CloseableHttpClient client = getConnectionContext().getHttpClient();
+        final CloseableHttpResponse originalContentLengthUpdateResponse = client.execute(put);
         IOUtils.closeQuietly(originalContentLengthUpdateResponse);
 
         StatusLine statusLine = originalContentLengthUpdateResponse.getStatusLine();

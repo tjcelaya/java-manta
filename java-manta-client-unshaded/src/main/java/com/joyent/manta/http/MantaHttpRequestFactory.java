@@ -7,6 +7,7 @@
  */
 package com.joyent.manta.http;
 
+import com.joyent.manta.config.ConfigContext;
 import com.joyent.manta.exception.ConfigurationException;
 import org.apache.commons.lang3.Validate;
 import org.apache.http.NameValuePair;
@@ -26,10 +27,22 @@ import java.util.List;
  */
 public class MantaHttpRequestFactory {
 
+    /**
+     * Base URL for requests.
+     */
     private final String url;
 
     /**
+     * Build a new request factory based on a config's URL.
+     * @param config the config from which to extract a URL
+     */
+    public MantaHttpRequestFactory(final ConfigContext config) {
+        this(config.getMantaURL());
+    }
+
+    /**
      * Create an instance of the request factory based on the provided url.
+     * @param url the base url
      */
     public MantaHttpRequestFactory(final String url) {
         this.url = url;

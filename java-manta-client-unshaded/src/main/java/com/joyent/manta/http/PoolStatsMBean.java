@@ -10,6 +10,7 @@ package com.joyent.manta.http;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.apache.http.pool.PoolStats;
 
+import java.lang.ref.WeakReference;
 import javax.management.Attribute;
 import javax.management.AttributeList;
 import javax.management.AttributeNotFoundException;
@@ -23,7 +24,6 @@ import javax.management.MBeanNotificationInfo;
 import javax.management.MBeanOperationInfo;
 import javax.management.MBeanParameterInfo;
 import javax.management.ReflectionException;
-import java.lang.ref.WeakReference;
 
 /**
  * Class providing real-time information on the connection pool statistics
@@ -95,7 +95,6 @@ public class PoolStatsMBean implements DynamicMBean {
      * provides the {@link PoolStats} object.
      */
     private final WeakReference<PoolingHttpClientConnectionManager> connectionManagerRef;
-
 
     /**
      * Creates a new MBean instance backed by the passed connection manager.

@@ -9,10 +9,10 @@ package com.joyent.manta.http;
 
 import com.joyent.http.signature.ThreadLocalSigner;
 import com.joyent.http.signature.apache.httpclient.HttpSignatureAuthScheme;
-import com.joyent.http.signature.apache.httpclient.HttpSignatureConfigurator;
 import com.joyent.http.signature.apache.httpclient.HttpSignatureRequestInterceptor;
+import com.joyent.manta.client.MBeanable;
+import com.joyent.manta.client.MantaMBeanSupervisor;
 import com.joyent.manta.config.ConfigContext;
-import com.joyent.manta.config.ConfigContextMBean;
 import com.joyent.manta.config.DefaultsConfigContext;
 import com.joyent.manta.exception.ConfigurationException;
 import com.joyent.manta.util.MantaVersion;
@@ -21,7 +21,7 @@ import org.apache.commons.lang3.Validate;
 import org.apache.http.Header;
 import org.apache.http.HttpHeaders;
 import org.apache.http.HttpHost;
-import org.apache.http.auth.Credentials;
+import org.apache.http.HttpRequestInterceptor;
 import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.config.ConnectionConfig;
@@ -29,6 +29,7 @@ import org.apache.http.config.Registry;
 import org.apache.http.config.RegistryBuilder;
 import org.apache.http.config.SocketConfig;
 import org.apache.http.conn.DnsResolver;
+import org.apache.http.conn.HttpClientConnectionManager;
 import org.apache.http.conn.HttpConnectionFactory;
 import org.apache.http.conn.ManagedHttpClientConnection;
 import org.apache.http.conn.routing.HttpRoute;
@@ -50,8 +51,6 @@ import org.slf4j.LoggerFactory;
 
 import java.io.Closeable;
 import java.io.IOException;
-import java.lang.management.ManagementFactory;
-import java.lang.ref.WeakReference;
 import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.net.ProxySelector;
@@ -60,16 +59,7 @@ import java.security.KeyPair;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.atomic.AtomicInteger;
-import javax.management.DynamicMBean;
-import javax.management.JMException;
-import javax.management.MBeanServer;
-import javax.management.ObjectName;
 
 /**
  * Factory class that creates instances of
@@ -79,17 +69,11 @@ import javax.management.ObjectName;
  * @author <a href="https://github.com/dekobon">Elijah Zupancic</a>
  * @since 3.0.0
  */
-public class MantaConnectionFactory implements Closeable {
+public class MantaConnectionFactory implements Closeable, MBeanable {
     /**
      * Logger instance.
      */
     private static final Logger LOGGER = LoggerFactory.getLogger(MantaConnectionFactory.class);
-
-    /**
-     * A running count of the times we have created new {@link MantaConnectionFactory}
-     * instances.
-     */
-    private static final AtomicInteger CONNECTION_FACTORY_COUNT = new AtomicInteger(0);
 
     /**
      * Default DNS resolver for all connections to the Manta.
@@ -126,18 +110,7 @@ public class MantaConnectionFactory implements Closeable {
     /**
      * Connection manager instance that is associated with a single Manta client.
      */
-    private final PoolingHttpClientConnectionManager connectionManager;
-
-    /**
-     * Weak reference (because we don't want this object to own it) to signer
-     * thread local container.
-     */
-    private final WeakReference<ThreadLocalSigner> signerThreadLocalRef;
-
-    /**
-     * List of all MBeans to be added to JMX.
-     */
-    private final Map<ObjectName, DynamicMBean> jmxDynamicBeans;
+    private final HttpClientConnectionManager connectionManager;
 
     /**
      * Create new instance using the passed configuration.
@@ -155,10 +128,10 @@ public class MantaConnectionFactory implements Closeable {
     /**
      * Create new instance using the passed configuration.
      *
-     * @param config        configuration of the connection parameters
-     * @param keyPair       cryptographic signing key pair used for HTTP signatures
-     * @param signer        Signer configured to use the given keyPair
-     * @param clientBuilder existing HttpClientBuilder to further configure, or null
+     * @param config         configuration of the connection parameters
+     * @param keyPair        cryptographic signing key pair used for HTTP signatures
+     * @param signer         Signer configured to use the given keyPair
+     * @param clientBuilder  existing HttpClientBuilder to further configure, or null
      */
     public MantaConnectionFactory(final ConfigContext config,
                                   final KeyPair keyPair,
@@ -166,7 +139,6 @@ public class MantaConnectionFactory implements Closeable {
                                   final HttpClientBuilder clientBuilder) {
         Validate.notNull(config, "Configuration context must not be null");
 
-        CONNECTION_FACTORY_COUNT.incrementAndGet();
 
         ConfigContext.validate(config);
 
@@ -180,96 +152,14 @@ public class MantaConnectionFactory implements Closeable {
                 config.noAuth(),
                 DefaultsConfigContext.DEFAULT_NO_AUTH);
 
-        if (authDisabled) {
-            this.signerThreadLocalRef = new WeakReference<>(null);
-        } else {
-            this.signerThreadLocalRef = new WeakReference<>(signer);
-            final Credentials credentials = new UsernamePasswordCredentials(config.getMantaUser(), null);
-            final HttpSignatureAuthScheme authScheme = (HttpSignatureAuthScheme) new HttpSignatureConfigurator(
-                    keyPair,
-                    credentials,
-                    signer).getAuthScheme();
-
+        if (!authDisabled) {
             // pass true directly to the constructor because auth is enabled
-            this.httpClientBuilder.addInterceptorLast(
-                    new HttpSignatureRequestInterceptor(authScheme, credentials, true));
-
+            final HttpRequestInterceptor authInterceptor = new HttpSignatureRequestInterceptor(
+                            new HttpSignatureAuthScheme(keyPair, signer),
+                            new UsernamePasswordCredentials(config.getMantaUser(), null),
+                            true);
+            this.httpClientBuilder.addInterceptorLast(authInterceptor);
         }
-
-        this.jmxDynamicBeans = buildMBeans();
-
-        registerMBeans();
-    }
-
-    /**
-     * Registers the beans stored in <code>this.jmxDynamicBeans</code> so
-     * that they can be exposed via JMX.
-     */
-    protected void registerMBeans() {
-        MBeanServer server = ManagementFactory.getPlatformMBeanServer();
-
-        Set<Map.Entry<ObjectName, DynamicMBean>> beans = this.jmxDynamicBeans.entrySet();
-
-        for (Map.Entry<ObjectName, DynamicMBean> bean : beans) {
-            try {
-                server.registerMBean(bean.getValue(), bean.getKey());
-            } catch (JMException e) {
-                String msg = String.format("Error registering [%s] MBean in JMX",
-                        bean.getKey());
-                LOGGER.warn(msg, e);
-            }
-        }
-    }
-
-    /**
-     * Unregisters the beans stored in <code>this.jmxDynamicBeans</code> so
-     * that they are no longer visible via JMX.
-     */
-    protected void unregisterMBeans() {
-        MBeanServer server = ManagementFactory.getPlatformMBeanServer();
-
-        Set<Map.Entry<ObjectName, DynamicMBean>> beans = this.jmxDynamicBeans.entrySet();
-
-        for (Map.Entry<ObjectName, DynamicMBean> bean : beans) {
-            try {
-                server.unregisterMBean(bean.getKey());
-            } catch (JMException e) {
-                String msg = String.format("Error registering [%s] MBean in JMX",
-                        bean.getKey());
-                LOGGER.warn(msg, e);
-            }
-        }
-    }
-
-    /**
-     * Builds the MBeans used to expose data to JMX.
-     * @return populated Map of beans
-     */
-    protected Map<ObjectName, DynamicMBean> buildMBeans() {
-        Map<ObjectName, DynamicMBean> beans = new HashMap<>();
-
-        try {
-            String poolStatsObjectName = String.format(
-                    "com.joyent.manta.client:type=PoolStatsMBean[%d]",
-                    CONNECTION_FACTORY_COUNT.get());
-            ObjectName poolStatsName = new ObjectName(poolStatsObjectName);
-            beans.put(poolStatsName, new PoolStatsMBean(this.connectionManager));
-        } catch (JMException e) {
-            LOGGER.warn("Error creating PoolStatsMBean", e);
-        }
-
-        try {
-            String configObjectName = String.format(
-                    "com.joyent.manta.client:type=ConfigMBean[%d]",
-                    CONNECTION_FACTORY_COUNT.get());
-            ObjectName configName = new ObjectName(configObjectName);
-            beans.put(configName, new ConfigContextMBean(this.config));
-        } catch (JMException e) {
-            LOGGER.warn("Error creating ConfigMBean", e);
-        }
-
-        // If we had any errors, we just return no mbeans
-        return Collections.unmodifiableMap(beans);
     }
 
     /**
@@ -326,7 +216,7 @@ public class MantaConnectionFactory implements Closeable {
      *
      * @return fully configured connection manager
      */
-    protected PoolingHttpClientConnectionManager buildConnectionManager() {
+    protected HttpClientConnectionManager buildConnectionManager() {
         final int maxConns = ObjectUtils.firstNonNull(
                 config.getMaximumConnections(),
                 DefaultsConfigContext.DEFAULT_MAX_CONNS);
@@ -471,20 +361,21 @@ public class MantaConnectionFactory implements Closeable {
     }
 
     @Override
+    public void createExposedMBean(final MantaMBeanSupervisor beanSupervisor) {
+        Validate.notNull(beanSupervisor, "MantaMBeanSupervisor must not be null");
+
+        if (!(connectionManager instanceof PoolingHttpClientConnectionManager)) {
+            return;
+        }
+
+        beanSupervisor.expose(new PoolStatsMBean((PoolingHttpClientConnectionManager) connectionManager));
+    }
+
+    @Override
     public void close() throws IOException {
-        if (this.connectionManager != null) {
-            connectionManager.shutdown();
+        if (connectionManager == null) {
+            return;
         }
-
-        /* We clear all thread local instances of the signer class so that
-         * there are no dangling thread-local variables when the connection
-         * factory is closed (typically when MantaClient is closed).
-         */
-        final ThreadLocalSigner signerThreadLocal = this.signerThreadLocalRef.get();
-        if (signerThreadLocal != null) {
-            signerThreadLocal.clearAll();
-        }
-
-        unregisterMBeans();
+        connectionManager.shutdown();
     }
 }

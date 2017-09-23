@@ -63,12 +63,12 @@ public class StandardHttpHelper implements HttpHelper {
     /**
      * Reference to the Apache HTTP Client HTTP request creation class.
      */
-    protected final MantaHttpRequestFactory requestFactory;
+    private final MantaHttpRequestFactory requestFactory;
 
     /**
      * Current connection context used for maintaining state between requests.
      */
-    protected final MantaConnectionContext connectionContext;
+    private final MantaConnectionContext connectionContext;
 
     /**
      * Flag toggling the checksum verification of uploaded files.
@@ -534,6 +534,14 @@ public class StandardHttpHelper implements HttpHelper {
         } else {
             return code != expectedStatusCode;
         }
+    }
+
+    protected MantaHttpRequestFactory getRequestFactory() {
+        return requestFactory;
+    }
+
+    protected MantaConnectionContext getConnectionContext() {
+        return connectionContext;
     }
 
     /**
