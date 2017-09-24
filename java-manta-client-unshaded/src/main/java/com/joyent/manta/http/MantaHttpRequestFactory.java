@@ -54,7 +54,7 @@ public class MantaHttpRequestFactory {
      * @return instance of configured {@link org.apache.http.client.methods.HttpRequestBase} object.
      */
     public HttpDelete delete(final String path) {
-        return new HttpDelete(path);
+        return new HttpDelete(uriForPath(path));
     }
 
     /**
