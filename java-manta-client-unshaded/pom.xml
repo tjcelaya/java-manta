@@ -178,6 +178,8 @@
             </exclusions>
         </dependency>
 
+        <!-- Metrics collection (core + httpclient) and publishing (jmx) -->
+
         <dependency>
             <groupId>io.dropwizard.metrics</groupId>
             <artifactId>metrics-core</artifactId>
@@ -187,6 +189,12 @@
         <dependency>
             <groupId>io.dropwizard.metrics</groupId>
             <artifactId>metrics-jmx</artifactId>
+            <version>${dependency.dropwizard-metrics.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>io.dropwizard.metrics</groupId>
+            <artifactId>metrics-httpclient</artifactId>
             <version>${dependency.dropwizard-metrics.version}</version>
         </dependency>
 
